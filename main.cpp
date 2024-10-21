@@ -8,10 +8,10 @@
 #include <sstream>
 #include <iomanip>
 
-#include <imgui.h>
-#include <imgui/backends/imgui_impl_win32.h>
-#include "imgui/backends/imgui_impl_dx11.h"
-#include <d3d11.h>
+#include <thread>
+#include <chrono>
+
+#include <gui/gui.h>
 
 #include "matrix3x4.h"
 #include "source2sdk/client/CCitadelPlayerController.hpp"
@@ -212,8 +212,10 @@ public:
     }
 };
 
+
 int main()
 {
+#pragma region CHEAT
     std::cerr << "By 5komar (Catrine)\n" << std::endl;
 
     Signature localPlayerSig("48 8B 0D ? ? ? ? 48 85 C9 74 65 83 FF FF", 3, 7);
@@ -243,7 +245,7 @@ int main()
     std::vector<uint8_t> memory = readMemoryBytes(processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll),
                                                   moduleInfo.SizeOfImage);
 
-#if 0
+#if 1
     std::cout << "dwLocalPlayerController:" << std::endl;
     localPlayerSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
     std::cout << "dwViewMatrix:" << std::endl;
@@ -260,7 +262,7 @@ int main()
 
     {
         Type<uintptr_t> pc_ptr {processHandle
-            ,reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + 0x2180338};
+            ,reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + 0x2180378};
 
         Type<source2sdk::client::CCitadelPlayerController> pc {processHandle
             , *pc_ptr.get() };
@@ -311,14 +313,75 @@ int main()
             matrix.reread();
         }
     }
+#pragma endregion CHEAT
 
-    HWND hwnd = FindWindowA(NULL, "Deadlock");
-    if(!hwnd)
+    gui::CreateHWindow("Deadlock", "Cheat Menu");
+    if(!gui::CreateDevice())
     {
         return 1;
     }
+    gui::CreateImGui();
 
-    CloseHandle(processHandle);
+    while (gui::isRunning)
+    {
+        {
+            Type<uintptr_t> pc_ptr {processHandle
+                ,reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + 0x2180378};
+
+            Type<source2sdk::client::CCitadelPlayerController> pc {processHandle
+                , *pc_ptr.get() };
+
+            auto entity_ptr = pc->m_pEntity;
+            do
+            {
+                Type entity {processHandle , entity_ptr};
+                using str_t = char[256];
+                Type<str_t> str = {processHandle, *(uintptr_t*)entity->m_designerName};
+                Type<str_t> str_2 = {processHandle, *(uintptr_t*)entity->m_name};
+                if( strcmp((char*)str_2.get(), "player") == 0)
+                {
+                    std::cout << entity_ptr << ": " << (char*)str.get()
+                        << "   " << (char*)str_2.get() << std::endl;
+                }
+
+                entity_ptr = entity->m_pNext;
+            } while (entity_ptr);
+
+            std::cout << "============\n";
+
+            entity_ptr = pc->m_pEntity;
+            do
+            {
+                Type entity {processHandle , entity_ptr};
+                using str_t = char[256];
+                Type<str_t> str = {processHandle, *(uintptr_t*)entity->m_designerName};
+                Type<str_t> str_2 = {processHandle, *(uintptr_t*)entity->m_name};
+                if( strcmp((char*)str_2.get(), "player") == 0)
+                {
+                    std::cout << entity_ptr << ": " << (char*)str.get()
+                        << "   " << (char*)str_2.get() << std::endl;
+                }
+
+                entity_ptr = entity->m_pPrev;
+            } while (entity_ptr);
+        }
+
+        Type<Urho3D::Matrix3x4> matrix {processHandle
+                , reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + 0x2192230};
+
+        gui::BeginRender();
+        gui::Render();
+        gui::EndRender();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+
+    // destroy gui
+    gui::DestroyImGui();
+    gui::DestroyDevice();
+    gui::DestroyHWindow();
+
+    //CloseHandle(processHandle);
     return 0;
 }
 
