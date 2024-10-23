@@ -1,12 +1,19 @@
 #include <Windows.h>
 #include "gui.h"
 
+#include <chrono>
 #include <imconfig.h>
 #include <imgui.h>
 #include <iostream>
 #include <ostream>
+#include <thread>
 #include <imgui/backends/imgui_impl_dx9.h>
 #include <imgui/backends/imgui_impl_win32.h>
+#include <glm/glm.hpp>
+
+#include "matrix3x4.h"
+#include "source2sdk/client/CGameSceneNode.hpp"
+#include "source2sdk/client/CPlayer_CameraServices.hpp"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 	HWND window,
@@ -276,18 +283,132 @@ void gui::EndRender() noexcept
 		ResetDevice();
 }
 
-void gui::Render() noexcept
+std::tuple<float, float, float, bool> world_to_screen(float in_x, float in_y, float in_z, Urho3D::Matrix3x4* mtx) {
+
+/*
+	float _x = mtx->m00_ * in_x + mtx->m01_ * in_y + mtx->m02_ * in_z + mtx->m03_;
+	float _y = mtx->m10_ * in_x + mtx->m11_ * in_y + mtx->m12_ * in_z + mtx->m13_;
+
+	float w = mtx->m30_ * in_x + mtx->m31_ * in_y + mtx->m32_ * in_z + mtx->m33_;
+*/
+
+	float _x = mtx->m00_ * in_x + mtx->m01_ * in_y + mtx->m02_ * in_z + mtx->m03_;
+	float _y = mtx->m10_ * in_x + mtx->m11_ * in_y + mtx->m12_ * in_z + mtx->m13_;
+
+	float w = mtx->m30_ * in_x + mtx->m31_ * in_y + mtx->m32_ * in_z + mtx->m33_;
+
+	bool facing = false;
+	if (w < 0.001f)
+	{
+		facing = false;
+		_x *= 100000;
+		_y *= 100000;
+	}
+	else
+	{
+		facing = true;
+		float invw = 1.0f / w;
+		_x *= invw;
+		_y *= invw;
+	}
+
+	_x = 0.5f * (1.0f + _x) * gui::WIDTH;
+	_y = 0.5f * (1.0f - _y) * gui::HEIGHT;
+
+	auto visible{ (_x >= 0 && _x <= gui::WIDTH) &&
+		_y >= 0 && _y <= gui::HEIGHT };
+	if (!facing || !visible)
+	{
+		_x = -640;
+		_y = -640;
+		return {0,0,0,false};
+	}
+
+	/*
+	float inv_w = 1.f / w;
+	_x *= inv_w;
+	_y *= inv_w;
+
+	float x = gui::WIDTH * .5f;
+	float y = gui::HEIGHT * .5f;
+
+	x += 0.5f * _x * gui::WIDTH + 0.5f;
+	y -= 0.5f * _y * gui::HEIGHT + 0.5f;
+	*/
+
+	return { _x, _y, w, true };
+}
+
+void gui::Render(SomeInfo some_info) noexcept
 {
 	ImGui::SetNextWindowPos({ 0, 0 });
-	ImGui::SetNextWindowSize({ 100, 100 });
+	ImGui::SetNextWindowSize({ static_cast<float>(WIDTH), static_cast<float>(HEIGHT) });
 	ImGui::Begin(
 		"subscribe to cazzy",
 		&isRunning,
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoSavedSettings |
 		ImGuiWindowFlags_NoCollapse |
-		ImGuiWindowFlags_NoMove
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoBackground
 	);
+
+	std::stringstream strsrm;
+	strsrm
+		<< some_info.matrix->m00_ << " "
+		<< some_info.matrix->m01_ << " "
+		<< some_info.matrix->m02_ << " "
+		<< some_info.matrix->m03_ << std::endl;
+	strsrm
+		<< some_info.matrix->m10_ << " "
+		<< some_info.matrix->m11_ << " "
+		<< some_info.matrix->m12_ << " "
+		<< some_info.matrix->m13_ << std::endl;
+	strsrm
+		<< some_info.matrix->m20_ << " "
+		<< some_info.matrix->m21_ << " "
+		<< some_info.matrix->m22_ << " "
+		<< some_info.matrix->m23_ << std::endl;
+	strsrm
+		<< some_info.matrix->m30_ << " "
+		<< some_info.matrix->m31_ << " "
+		<< some_info.matrix->m32_ << " "
+		<< some_info.matrix->m33_ << std::endl;
+
+	for(auto& i : some_info.pawns)
+	{
+		struct GG
+		{
+			float x;
+			float y;
+			float z;
+		};
+		/*
+		Type t_CS {i.pawn._ph, i.pawn->m_pCameraServices};
+		auto gg = *((GG*)i.pawn->v_angle);
+		strsrm << gg.x << " " << gg.y << " " << gg.z << std::endl;*/
+		strsrm << i.pawn->m_flMouseSensitivity << std::endl;
+
+		float x = *((float*)i.scene_node->m_nodeToWorld);
+		float y = *((float*)i.scene_node->m_nodeToWorld + 1);
+		float z = *((float*)i.scene_node->m_nodeToWorld + 2);
+		auto [a, b, c, is_ok] = world_to_screen(x, y, z, some_info.matrix.get());
+		if(is_ok)
+		{
+			float viewingAngle = atanf(HEIGHT / (2.f * c));
+			float h = 160.f * tanf(viewingAngle);
+			float w = h * 0.2f;
+
+			ImGui::GetWindowDrawList()->AddRect(
+				ImVec2{ a - w, b - h },
+				ImVec2{ a + w, b + h * 0.1f},
+				ImColor(255, 0, 0, 255),
+				5);
+		}
+	}
+
+	system("cls");
+	std::cout << strsrm.str();
 
 	ImGui::End();
 }

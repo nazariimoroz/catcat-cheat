@@ -53,9 +53,10 @@ struct Signature
         return bytes;
     }
 
-    void find(const std::vector<uint8_t>& memory, HANDLE processHandle, uintptr_t moduleBase) const
+    uintptr_t find(const std::vector<uint8_t>& memory, HANDLE processHandle, uintptr_t moduleBase) const
     {
         std::vector<uint8_t> pattern = parse_pattern();
+        std::vector<uintptr_t> offsets;
         for (size_t i = 1000000; i < memory.size(); ++i)
         {
             bool patternMatch = true;
@@ -75,8 +76,12 @@ struct Signature
                                   nullptr);
                 uintptr_t result = patternAddress + of + extra;
                 std::cout << "+ 0x" << std::hex << (result - moduleBase) << std::endl;
+
+                offsets.push_back(result - moduleBase);
             }
         }
+
+        return offsets.at(0);
     }
 };
 
@@ -167,52 +172,6 @@ struct Smth
 };
 
 
-template <class T>
-class Type
-{
-    std::vector<std::uint8_t> data;
-
-    uintptr_t _address;
-    HANDLE _ph;
-
-    // DEBUG ONLY
-    volatile T* ptr;
-
-public:
-    Type(HANDLE ph, std::uintptr_t address)
-    {
-        _address = address;
-        _ph = ph;
-
-        reread();
-    }
-
-    Type(HANDLE ph, T* address)
-    {
-        _address = reinterpret_cast<uintptr_t>(address);
-        _ph = ph;
-
-        reread();
-    }
-
-    T* get()
-    {
-        ptr = reinterpret_cast<T*>(data.data());
-        return reinterpret_cast<T*>(data.data());
-    }
-
-    T* operator->()
-    {
-        return get();
-    }
-
-    void reread()
-    {
-        data = readMemoryBytes(_ph, _address, sizeof(T));
-    }
-};
-
-
 int main()
 {
 #pragma region CHEAT
@@ -224,7 +183,6 @@ int main()
     Signature CCameraManagerSig("48 8D 3D ? ? ? ? 8B D9", 3, 7);
     Signature gameEntitySystemSig("48 8B 1D ? ? ? ? 48 89 1D", 3, 7);
     Signature viewRenderSig("48 89 05 ? ? ? ? 48 8B C8 48 85 C0", 3, 7);
-
 
     std::string processName = "project8.exe";
     HANDLE processHandle = getProcessHandle(processName);
@@ -247,9 +205,9 @@ int main()
 
 #if 1
     std::cout << "dwLocalPlayerController:" << std::endl;
-    localPlayerSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
+    uintptr_t localPlayerOffset = localPlayerSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
     std::cout << "dwViewMatrix:" << std::endl;
-    viewMatrixSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
+    uintptr_t viewMatrixOffset = viewMatrixSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
     std::cout << "dwEntityList:" << std::endl;
     entityListSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
     std::cout << "dwViewRender:" << std::endl;
@@ -260,6 +218,7 @@ int main()
     CCameraManagerSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
 #endif
 
+#if 0
     {
         Type<uintptr_t> pc_ptr {processHandle
             ,reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + 0x2180378};
@@ -313,6 +272,7 @@ int main()
             matrix.reread();
         }
     }
+#endif
 #pragma endregion CHEAT
 
     gui::CreateHWindow("Deadlock", "Cheat Menu");
@@ -324,9 +284,10 @@ int main()
 
     while (gui::isRunning)
     {
+        std::vector<Pawn> pawns;
         {
             Type<uintptr_t> pc_ptr {processHandle
-                ,reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + 0x2180378};
+                ,reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + localPlayerOffset};
 
             Type<source2sdk::client::CCitadelPlayerController> pc {processHandle
                 , *pc_ptr.get() };
@@ -338,10 +299,14 @@ int main()
                 using str_t = char[256];
                 Type<str_t> str = {processHandle, *(uintptr_t*)entity->m_designerName};
                 Type<str_t> str_2 = {processHandle, *(uintptr_t*)entity->m_name};
-                if( strcmp((char*)str_2.get(), "player") == 0)
+                if( strcmp((char*)str.get(), "player") == 0)
                 {
-                    std::cout << entity_ptr << ": " << (char*)str.get()
-                        << "   " << (char*)str_2.get() << std::endl;
+                    Pawn pwn;
+                    pwn.name = (char*)str_2.get();
+                    pwn.pawn = {processHandle , *(uintptr_t*)entity->pad_0x00};
+                    pwn.body_comp = {processHandle , pwn.pawn->m_CBodyComponent};
+                    pwn.scene_node = {processHandle , pwn.body_comp->m_pSceneNode};
+                    pawns.push_back(pwn);
                 }
 
                 entity_ptr = entity->m_pNext;
@@ -356,10 +321,14 @@ int main()
                 using str_t = char[256];
                 Type<str_t> str = {processHandle, *(uintptr_t*)entity->m_designerName};
                 Type<str_t> str_2 = {processHandle, *(uintptr_t*)entity->m_name};
-                if( strcmp((char*)str_2.get(), "player") == 0)
+                if( strcmp((char*)str.get(), "player") == 0)
                 {
-                    std::cout << entity_ptr << ": " << (char*)str.get()
-                        << "   " << (char*)str_2.get() << std::endl;
+                    Pawn pwn;
+                    pwn.name = (char*)str_2.get();
+                    pwn.pawn = {processHandle , *(uintptr_t*)entity->pad_0x00};
+                    pwn.body_comp = {processHandle , pwn.pawn->m_CBodyComponent};
+                    pwn.scene_node = {processHandle , pwn.body_comp->m_pSceneNode};
+                    pawns.push_back(pwn);
                 }
 
                 entity_ptr = entity->m_pPrev;
@@ -367,10 +336,10 @@ int main()
         }
 
         Type<Urho3D::Matrix3x4> matrix {processHandle
-                , reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + 0x2192230};
+                , reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + viewMatrixOffset};
 
         gui::BeginRender();
-        gui::Render();
+        gui::Render({std::move(matrix), std::move(pawns)});
         gui::EndRender();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5));

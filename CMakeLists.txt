@@ -4,6 +4,7 @@ project(cheat_dl)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(imgui REQUIRED)
+find_package(glm REQUIRED)
 
 file(GLOB ${PROJECT_NAME}_SDK_SRC
         "source2sdk/*/*.h"
@@ -21,11 +22,13 @@ add_executable(${PROJECT_NAME} main.cpp
         imgui/backends/imgui_impl_dx9.cpp
         gui/gui.cpp
         gui/gui.h
-        matrix3x4.h)
+        matrix3x4.h
+        type.h)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         imgui::imgui
         d3d9
         d3dcompiler
-        dxgi)
+        dxgi
+        glm::glm)
 target_include_directories(${PROJECT_NAME} PRIVATE .)

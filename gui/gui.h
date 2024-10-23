@@ -1,5 +1,15 @@
 #pragma once
 #include <d3d9.h>
+#include <type.h>
+
+#include "matrix3x4.h"
+#include "source2sdk/client/C_CitadelPlayerPawn.hpp"
+
+struct SomeInfo
+{
+	Type<Urho3D::Matrix3x4> matrix;
+	std::vector<Pawn> pawns;
+};
 
 namespace gui
 {
@@ -42,5 +52,5 @@ namespace gui
 
 	void BeginRender() noexcept;
 	void EndRender() noexcept;
-	void Render() noexcept;
+	void Render(SomeInfo some_info) noexcept;
 }
