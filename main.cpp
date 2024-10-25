@@ -208,10 +208,11 @@ int main()
     uintptr_t localPlayerOffset = localPlayerSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
     std::cout << "dwViewMatrix:" << std::endl;
     uintptr_t viewMatrixOffset = viewMatrixSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
+    std::cout << "dwViewRender:" << std::endl;
+    uintptr_t viewRenderOffset = viewRenderSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
+
     std::cout << "dwEntityList:" << std::endl;
     entityListSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
-    std::cout << "dwViewRender:" << std::endl;
-    viewRenderSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
     std::cout << "dwGameEntitySystem:" << std::endl;
     gameEntitySystemSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
     std::cout << "CCameraManager:" << std::endl;
@@ -338,8 +339,16 @@ int main()
         Type<Urho3D::Matrix3x4> matrix {processHandle
                 , reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + viewMatrixOffset};
 
+        Type<ViewRender> $view_render;
+        {
+            Type<uintptr_t> $vr_ptr {processHandle
+                ,reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + viewRenderOffset};
+
+            $view_render = decltype($view_render){processHandle, *$vr_ptr.get()};
+        }
+
         gui::BeginRender();
-        gui::Render({std::move(matrix), std::move(pawns)});
+        gui::Render({std::move(matrix), std::move(pawns), std::move($view_render)});
         gui::EndRender();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5));

@@ -58,6 +58,12 @@ public:
     }
 };
 
+struct ViewRender
+{
+    char _ggg[0x28];
+    float fov; // 0x28
+};
+
 struct Pawn
 {
     std::string name;

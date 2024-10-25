@@ -9,6 +9,7 @@ struct SomeInfo
 {
 	Type<Urho3D::Matrix3x4> matrix;
 	std::vector<Pawn> pawns;
+	Type<ViewRender> view;
 };
 
 namespace gui

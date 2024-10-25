@@ -344,13 +344,14 @@ void gui::Render(SomeInfo some_info) noexcept
 	ImGui::SetNextWindowPos({ 0, 0 });
 	ImGui::SetNextWindowSize({ static_cast<float>(WIDTH), static_cast<float>(HEIGHT) });
 	ImGui::Begin(
-		"subscribe to cazzy",
+		"AAA",
 		&isRunning,
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoSavedSettings |
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoBackground
+		ImGuiWindowFlags_NoBackground |
+		ImGuiWindowFlags_NoTitleBar
 	);
 
 	std::stringstream strsrm;
@@ -395,7 +396,7 @@ void gui::Render(SomeInfo some_info) noexcept
 		auto [a, b, c, is_ok] = world_to_screen(x, y, z, some_info.matrix.get());
 		if(is_ok)
 		{
-			float viewingAngle = atanf(HEIGHT / (2.f * c));
+			float viewingAngle = atanf(HEIGHT / ((some_info.view->fov / 45.f) * c));
 			float h = 160.f * tanf(viewingAngle);
 			float w = h * 0.2f;
 
