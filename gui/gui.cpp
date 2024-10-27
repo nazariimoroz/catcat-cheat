@@ -15,6 +15,7 @@
 #include "source2sdk/client/CBodyComponent.hpp"
 #include "source2sdk/client/CGameSceneNode.hpp"
 #include "source2sdk/client/CPlayer_CameraServices.hpp"
+#include "source2sdk/entity2/CEntityIdentity.hpp"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 	HWND window,
@@ -355,6 +356,11 @@ void gui::Render(SomeInfo some_info) noexcept
 		ImGuiWindowFlags_NoTitleBar
 	);
 
+	auto& local_player = *std::ranges::find_if(some_info.pawns, [&](auto& p)
+	{
+		return p.ex_controller->m_bIsLocalPlayerController;
+	});
+
 	for(auto& i : some_info.pawns)
 	{
 		struct GG
@@ -368,13 +374,28 @@ void gui::Render(SomeInfo some_info) noexcept
 		auto gg = *((GG*)i.pawn->v_angle);
 		strsrm << gg.x << " " << gg.y << " " << gg.z << std::endl;*/
 
+		if(i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
+			continue;
+
 		if(i.ex_pawn->m_CBodyComponent == nullptr)
 			continue;
-		Type bc { i.ex_pawn._ph, i.ex_pawn->m_CBodyComponent };
+		Type bc { i.ex_pawn._ph, i.ex_pawn->m_CBodyComponent, std::make_tuple(
+			&source2sdk::client::CBodyComponent::m_pSceneNode
+		) };
 
 		if(bc->m_pSceneNode == nullptr)
 			continue;
-		Type scene_node { bc._ph, bc->m_pSceneNode };
+		Type scene_node { bc._ph, bc->m_pSceneNode, std::make_tuple(
+			&source2sdk::client::CGameSceneNode::m_nodeToWorld
+		) };
+
+		if(i.ex_pawn->m_pEntity == nullptr)
+			continue;
+		Type pawn_entity { i.ex_pawn._ph, i.ex_pawn->m_pEntity, std::make_tuple(
+			&source2sdk::entity2::CEntityIdentity::m_name
+		) };
+
+		Type<str_t> pawn_name {i.ex_pawn._ph, BYTES_TO_PTR(pawn_entity->m_name)};
 
 		float x = *((float*)scene_node->m_nodeToWorld);
 		float y = *((float*)scene_node->m_nodeToWorld + 1);
@@ -393,6 +414,21 @@ void gui::Render(SomeInfo some_info) noexcept
 				0,
 				ImDrawFlags_None,
 				2);
+
+			ImGui::GetWindowDrawList()->AddText(
+				ImVec2{ a + w + 5, b - h },
+				ImColor(255, 0, 0, 255),
+				c_heroname_to_realname(pawn_name->str()).c_str());
+
+			ImGui::GetWindowDrawList()->AddRectFilled(
+				ImVec2{ a + w + 5, b - h + 20.f + 100.f },
+				ImVec2{ a + w + 10, b - h + 20.f },
+				ImColor(255, 0, 0, 255));
+
+			ImGui::GetWindowDrawList()->AddRectFilled(
+				ImVec2{ a + w + 5, b - h + 20.f + ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) * 100.f },
+				ImVec2{ a + w + 10, b - h + 20.f },
+				ImColor(0, 255, 0, 255));
 		}
 	}
 

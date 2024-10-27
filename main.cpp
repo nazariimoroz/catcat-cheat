@@ -7,6 +7,7 @@
 #include <Psapi.h>
 #include <sstream>
 #include <iomanip>
+#include <functional>
 
 #include <thread>
 #include <chrono>
@@ -199,8 +200,13 @@ std::vector<player_t> get_all_players(HANDLE processHandle, uintptr_t entity_lis
         if(*ex_controller_ptr == 0)
             continue;
 
-        Type<source2sdk::client::CCitadelPlayerController> ex_controller { processHandle,
-            *ex_controller_ptr};
+        Type<source2sdk::client::CCitadelPlayerController> ex_controller { processHandle, *ex_controller_ptr,
+            std::make_tuple(
+                &source2sdk::client::CCitadelPlayerController::m_iTeamNum,
+                &source2sdk::client::CCitadelPlayerController::m_pEntity,
+                &source2sdk::client::CCitadelPlayerController::m_hPawn,
+                &source2sdk::client::CCitadelPlayerController::m_bIsLocalPlayerController
+            )};
 
         if(!ex_controller->m_pEntity)
             continue;
@@ -214,9 +220,9 @@ std::vector<player_t> get_all_players(HANDLE processHandle, uintptr_t entity_lis
         if( strcmp(designer_name->str(), "citadel_player_controller") != 0)
             continue;
 
-        player.ex_controller = {processHandle, *ex_controller_ptr};
+        player.ex_controller = std::move(ex_controller);
 
-        int32_t pawn_index = *(int32_t*)ex_controller->m_hPawn;
+        int32_t pawn_index = *(int32_t*)player.ex_controller->m_hPawn;
         uintptr_t pawns_entity_list_sys_ptr
             = entity_list_sys_ptr + (0x8 * ((pawn_index & 0x7FFF) >> 0x9) + 0x10);
         Type<uintptr_t> ex_pawns_entity_liest_ptr { processHandle,
@@ -233,19 +239,34 @@ std::vector<player_t> get_all_players(HANDLE processHandle, uintptr_t entity_lis
         if(*ex_pawn_ptr == 0)
             continue;
 
-        source2sdk::client::C_CitadelPlayerPawn* b = nullptr;
-        std::tuple c{ &source2sdk::client::C_CitadelPlayerPawn::pad_0x12cc, 1 };
-        b->*std::get<0>(c);
-
-        const auto ptr = (*ex_pawn_ptr).get();
-        Type<source2sdk::client::C_CitadelPlayerPawn> pawn{processHandle, ptr};
-        //player.ex_pawn = std::move(Type<source2sdk::client::C_CitadelPlayerPawn>{processHandle,
-        //    *ex_pawn_ptr});
+        player.ex_pawn = Type<source2sdk::client::C_CitadelPlayerPawn>{processHandle, *ex_pawn_ptr, std::make_tuple(
+            &source2sdk::client::C_CitadelPlayerPawn::m_CBodyComponent,
+            &source2sdk::client::C_CitadelPlayerPawn::m_pEntity,
+            &source2sdk::client::C_CitadelPlayerPawn::m_iHealth,
+            &source2sdk::client::C_CitadelPlayerPawn::m_iMaxHealth
+        )};;
 
         players.push_back(player);
     }
 
     return players;
+}
+
+template<class T, std::size_t I = 0, typename... Tp>
+inline typename std::enable_if<I == sizeof...(Tp), void>::type
+  test1(std::tuple<Tp...>& t)
+{
+
+}
+
+template<class T, std::size_t I = 0, typename... Tp>
+inline typename std::enable_if<I < sizeof...(Tp), void>::type
+  test1(std::tuple<Tp...>& t)
+{
+    source2sdk::client::C_CitadelPlayerPawn* nullptr_var = nullptr;
+
+    std::cout << std::hex << (char*)&(nullptr_var->*std::get<I>(t)) - (char*)(nullptr_var) << std::endl;
+    test1<T, I + 1, Tp...>(t);
 }
 
 int main()
