@@ -12,6 +12,7 @@
 #include <glm/glm.hpp>
 
 #include "matrix3x4.h"
+#include "source2sdk/client/CBodyComponent.hpp"
 #include "source2sdk/client/CGameSceneNode.hpp"
 #include "source2sdk/client/CPlayer_CameraServices.hpp"
 
@@ -354,28 +355,6 @@ void gui::Render(SomeInfo some_info) noexcept
 		ImGuiWindowFlags_NoTitleBar
 	);
 
-	std::stringstream strsrm;
-	strsrm
-		<< some_info.matrix->m00_ << " "
-		<< some_info.matrix->m01_ << " "
-		<< some_info.matrix->m02_ << " "
-		<< some_info.matrix->m03_ << std::endl;
-	strsrm
-		<< some_info.matrix->m10_ << " "
-		<< some_info.matrix->m11_ << " "
-		<< some_info.matrix->m12_ << " "
-		<< some_info.matrix->m13_ << std::endl;
-	strsrm
-		<< some_info.matrix->m20_ << " "
-		<< some_info.matrix->m21_ << " "
-		<< some_info.matrix->m22_ << " "
-		<< some_info.matrix->m23_ << std::endl;
-	strsrm
-		<< some_info.matrix->m30_ << " "
-		<< some_info.matrix->m31_ << " "
-		<< some_info.matrix->m32_ << " "
-		<< some_info.matrix->m33_ << std::endl;
-
 	for(auto& i : some_info.pawns)
 	{
 		struct GG
@@ -388,28 +367,34 @@ void gui::Render(SomeInfo some_info) noexcept
 		Type t_CS {i.pawn._ph, i.pawn->m_pCameraServices};
 		auto gg = *((GG*)i.pawn->v_angle);
 		strsrm << gg.x << " " << gg.y << " " << gg.z << std::endl;*/
-		strsrm << i.pawn->m_flMouseSensitivity << std::endl;
 
-		float x = *((float*)i.scene_node->m_nodeToWorld);
-		float y = *((float*)i.scene_node->m_nodeToWorld + 1);
-		float z = *((float*)i.scene_node->m_nodeToWorld + 2);
+		if(i.ex_pawn->m_CBodyComponent == nullptr)
+			continue;
+		Type bc { i.ex_pawn._ph, i.ex_pawn->m_CBodyComponent };
+
+		if(bc->m_pSceneNode == nullptr)
+			continue;
+		Type scene_node { bc._ph, bc->m_pSceneNode };
+
+		float x = *((float*)scene_node->m_nodeToWorld);
+		float y = *((float*)scene_node->m_nodeToWorld + 1);
+		float z = *((float*)scene_node->m_nodeToWorld + 2);
 		auto [a, b, c, is_ok] = world_to_screen(x, y, z, some_info.matrix.get());
 		if(is_ok)
 		{
-			float viewingAngle = atanf(HEIGHT / ((some_info.view->fov / 45.f) * c));
+			float viewingAngle = atanf(HEIGHT / ((some_info.view->fov / 43.805f) * c));
 			float h = 160.f * tanf(viewingAngle);
 			float w = h * 0.2f;
 
 			ImGui::GetWindowDrawList()->AddRect(
 				ImVec2{ a - w, b - h },
-				ImVec2{ a + w, b + h * 0.1f},
+				ImVec2{ a + w, b},
 				ImColor(255, 0, 0, 255),
-				5);
+				0,
+				ImDrawFlags_None,
+				2);
 		}
 	}
-
-	system("cls");
-	std::cout << strsrm.str();
 
 	ImGui::End();
 }

@@ -155,7 +155,21 @@ MODULEINFO getModuleInfo(HANDLE processHandle, const std::string& moduleName)
 std::vector<uint8_t> readMemoryBytes(HANDLE processHandle, uintptr_t address, size_t size)
 {
     std::vector<uint8_t> buffer(size);
-    ReadProcessMemory(processHandle, reinterpret_cast<LPCVOID>(address), buffer.data(), size, nullptr);
+    if(!ReadProcessMemory(processHandle, reinterpret_cast<LPCVOID>(address), buffer.data(), size, nullptr))
+    {
+        auto errorMessageID = ::GetLastError();
+
+        LPSTR messageBuffer = nullptr;
+
+        size_t size = FormatMessageA(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+
+        std::string message(messageBuffer, size);
+
+        LocalFree(messageBuffer);
+        std::cout << message << std::endl;
+    }
     return buffer;
 }
 
@@ -171,6 +185,68 @@ struct Smth
     uintptr_t ptr;
 };
 
+std::vector<player_t> get_all_players(HANDLE processHandle, uintptr_t entity_list_sys_ptr)
+{
+    std::vector<player_t> players;
+    Type<uintptr_t> ex_entity_list_ptr { processHandle, entity_list_sys_ptr + 0x10 };
+
+    for(int i = 0; i < 20; ++i)
+    {
+        player_t player {};
+        Type<uintptr_t> ex_controller_ptr { processHandle,
+            (*ex_entity_list_ptr) + 0x78 * (i & 0x1FF) };
+
+        if(*ex_controller_ptr == 0)
+            continue;
+
+        Type<source2sdk::client::CCitadelPlayerController> ex_controller { processHandle,
+            *ex_controller_ptr};
+
+        if(!ex_controller->m_pEntity)
+            continue;
+
+        Type ex_entity{ processHandle, ex_controller->m_pEntity };
+        const auto designer_name_ptr = *(uintptr_t*)ex_entity->m_designerName;
+        if(!designer_name_ptr)
+            continue;
+
+        Type<str_t> designer_name { processHandle, designer_name_ptr };
+        if( strcmp(designer_name->str(), "citadel_player_controller") != 0)
+            continue;
+
+        player.ex_controller = {processHandle, *ex_controller_ptr};
+
+        int32_t pawn_index = *(int32_t*)ex_controller->m_hPawn;
+        uintptr_t pawns_entity_list_sys_ptr
+            = entity_list_sys_ptr + (0x8 * ((pawn_index & 0x7FFF) >> 0x9) + 0x10);
+        Type<uintptr_t> ex_pawns_entity_liest_ptr { processHandle,
+            pawns_entity_list_sys_ptr};
+
+        if(*ex_pawns_entity_liest_ptr == 0)
+            continue;
+
+        uintptr_t pawn_ptr_ptr = (*ex_pawns_entity_liest_ptr) + 0x78 * (pawn_index & 0x1FF);
+        if(pawn_ptr_ptr == 0)
+            continue;
+
+        Type<uintptr_t> ex_pawn_ptr{ processHandle, pawn_ptr_ptr };
+        if(*ex_pawn_ptr == 0)
+            continue;
+
+        source2sdk::client::C_CitadelPlayerPawn* b = nullptr;
+        std::tuple c{ &source2sdk::client::C_CitadelPlayerPawn::pad_0x12cc, 1 };
+        b->*std::get<0>(c);
+
+        const auto ptr = (*ex_pawn_ptr).get();
+        Type<source2sdk::client::C_CitadelPlayerPawn> pawn{processHandle, ptr};
+        //player.ex_pawn = std::move(Type<source2sdk::client::C_CitadelPlayerPawn>{processHandle,
+        //    *ex_pawn_ptr});
+
+        players.push_back(player);
+    }
+
+    return players;
+}
 
 int main()
 {
@@ -206,13 +282,16 @@ int main()
 #if 1
     std::cout << "dwLocalPlayerController:" << std::endl;
     uintptr_t localPlayerOffset = localPlayerSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
+
     std::cout << "dwViewMatrix:" << std::endl;
     uintptr_t viewMatrixOffset = viewMatrixSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
+
     std::cout << "dwViewRender:" << std::endl;
     uintptr_t viewRenderOffset = viewRenderSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
 
     std::cout << "dwEntityList:" << std::endl;
-    entityListSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
+    uintptr_t entityListOffset = entityListSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
+
     std::cout << "dwGameEntitySystem:" << std::endl;
     gameEntitySystemSig.find(memory, processHandle, reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll));
     std::cout << "CCameraManager:" << std::endl;
@@ -285,73 +364,24 @@ int main()
 
     while (gui::isRunning)
     {
-        std::vector<Pawn> pawns;
-        {
-            Type<uintptr_t> pc_ptr {processHandle
-                ,reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + localPlayerOffset};
-
-            Type<source2sdk::client::CCitadelPlayerController> pc {processHandle
-                , *pc_ptr.get() };
-
-            auto entity_ptr = pc->m_pEntity;
-            do
-            {
-                Type entity {processHandle , entity_ptr};
-                using str_t = char[256];
-                Type<str_t> str = {processHandle, *(uintptr_t*)entity->m_designerName};
-                Type<str_t> str_2 = {processHandle, *(uintptr_t*)entity->m_name};
-                if( strcmp((char*)str.get(), "player") == 0)
-                {
-                    Pawn pwn;
-                    pwn.name = (char*)str_2.get();
-                    pwn.pawn = {processHandle , *(uintptr_t*)entity->pad_0x00};
-                    pwn.body_comp = {processHandle , pwn.pawn->m_CBodyComponent};
-                    pwn.scene_node = {processHandle , pwn.body_comp->m_pSceneNode};
-                    pawns.push_back(pwn);
-                }
-
-                entity_ptr = entity->m_pNext;
-            } while (entity_ptr);
-
-            std::cout << "============\n";
-
-            entity_ptr = pc->m_pEntity;
-            do
-            {
-                Type entity {processHandle , entity_ptr};
-                using str_t = char[256];
-                Type<str_t> str = {processHandle, *(uintptr_t*)entity->m_designerName};
-                Type<str_t> str_2 = {processHandle, *(uintptr_t*)entity->m_name};
-                if( strcmp((char*)str.get(), "player") == 0)
-                {
-                    Pawn pwn;
-                    pwn.name = (char*)str_2.get();
-                    pwn.pawn = {processHandle , *(uintptr_t*)entity->pad_0x00};
-                    pwn.body_comp = {processHandle , pwn.pawn->m_CBodyComponent};
-                    pwn.scene_node = {processHandle , pwn.body_comp->m_pSceneNode};
-                    pawns.push_back(pwn);
-                }
-
-                entity_ptr = entity->m_pPrev;
-            } while (entity_ptr);
-        }
-
         Type<Urho3D::Matrix3x4> matrix {processHandle
                 , reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + viewMatrixOffset};
 
-        Type<ViewRender> $view_render;
+        Type<ViewRender> view_render;
         {
-            Type<uintptr_t> $vr_ptr {processHandle
+            Type<uintptr_t> vr_ptr {processHandle
                 ,reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + viewRenderOffset};
 
-            $view_render = decltype($view_render){processHandle, *$vr_ptr.get()};
+            view_render = decltype(view_render){processHandle, *vr_ptr.get()};
         }
 
-        gui::BeginRender();
-        gui::Render({std::move(matrix), std::move(pawns), std::move($view_render)});
-        gui::EndRender();
+        Type<uintptr_t> ex_entity_list_ptr{ processHandle
+                , reinterpret_cast<uintptr_t>(moduleInfo.lpBaseOfDll) + entityListOffset};
+        auto result = get_all_players(processHandle, *ex_entity_list_ptr);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        gui::BeginRender();
+        gui::Render({std::move(matrix), std::move(result), std::move(view_render)});
+        gui::EndRender();
     }
 
     // destroy gui

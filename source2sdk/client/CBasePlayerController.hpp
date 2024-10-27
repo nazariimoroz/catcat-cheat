@@ -58,7 +58,7 @@ namespace source2sdk::client
         // metadata: MNetworkChangeCallback "OnPawnChanged"
         // m_hPawn has a template type with potentially unknown template parameters. You can try uncommenting the field below.
         // CHandle<client::C_BasePlayerPawn> m_hPawn;
-        char m_hPawn[0x4]; // 0x614        
+        CHandle<client::C_BasePlayerPawn> m_hPawn; // 614
         // metadata: MNetworkEnable
         bool m_bKnownTeamMismatch; // 0x618        
         [[maybe_unused]] std::uint8_t pad_0x619[0x3]; // 0x619

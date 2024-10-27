@@ -8,7 +8,7 @@
 struct SomeInfo
 {
 	Type<Urho3D::Matrix3x4> matrix;
-	std::vector<Pawn> pawns;
+	std::vector<player_t> pawns;
 	Type<ViewRender> view;
 };
 
