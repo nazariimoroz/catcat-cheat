@@ -2,14 +2,16 @@
 #include <d3d9.h>
 #include <type.h>
 
+#include <vector>
+
 #include "matrix3x4.h"
 #include "source2sdk/client/C_CitadelPlayerPawn.hpp"
 
 struct SomeInfo
 {
-	Type<Urho3D::Matrix3x4> matrix;
+	ex::var<Urho3D::Matrix3x4> matrix;
 	std::vector<player_t> pawns;
-	Type<ViewRender> view;
+	ex::var<ViewRender> view;
 };
 
 namespace gui

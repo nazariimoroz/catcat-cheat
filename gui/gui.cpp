@@ -285,15 +285,8 @@ void gui::EndRender() noexcept
 		ResetDevice();
 }
 
-std::tuple<float, float, float, bool> world_to_screen(float in_x, float in_y, float in_z, Urho3D::Matrix3x4* mtx) {
-
-/*
-	float _x = mtx->m00_ * in_x + mtx->m01_ * in_y + mtx->m02_ * in_z + mtx->m03_;
-	float _y = mtx->m10_ * in_x + mtx->m11_ * in_y + mtx->m12_ * in_z + mtx->m13_;
-
-	float w = mtx->m30_ * in_x + mtx->m31_ * in_y + mtx->m32_ * in_z + mtx->m33_;
-*/
-
+std::tuple<float, float, float, bool> world_to_screen(float in_x, float in_y, float in_z, Urho3D::Matrix3x4* mtx)
+{
 	float _x = mtx->m00_ * in_x + mtx->m01_ * in_y + mtx->m02_ * in_z + mtx->m03_;
 	float _y = mtx->m10_ * in_x + mtx->m11_ * in_y + mtx->m12_ * in_z + mtx->m13_;
 
@@ -326,18 +319,6 @@ std::tuple<float, float, float, bool> world_to_screen(float in_x, float in_y, fl
 		return {0,0,0,false};
 	}
 
-	/*
-	float inv_w = 1.f / w;
-	_x *= inv_w;
-	_y *= inv_w;
-
-	float x = gui::WIDTH * .5f;
-	float y = gui::HEIGHT * .5f;
-
-	x += 0.5f * _x * gui::WIDTH + 0.5f;
-	y -= 0.5f * _y * gui::HEIGHT + 0.5f;
-	*/
-
 	return { _x, _y, w, true };
 }
 
@@ -369,33 +350,29 @@ void gui::Render(SomeInfo some_info) noexcept
 			float y;
 			float z;
 		};
-		/*
-		Type t_CS {i.pawn._ph, i.pawn->m_pCameraServices};
-		auto gg = *((GG*)i.pawn->v_angle);
-		strsrm << gg.x << " " << gg.y << " " << gg.z << std::endl;*/
 
 		if(i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
 			continue;
 
 		if(i.ex_pawn->m_CBodyComponent == nullptr)
 			continue;
-		Type bc { i.ex_pawn._ph, i.ex_pawn->m_CBodyComponent, std::make_tuple(
+		ex::var bc { i.ex_pawn->m_CBodyComponent, std::make_tuple(
 			&source2sdk::client::CBodyComponent::m_pSceneNode
 		) };
 
 		if(bc->m_pSceneNode == nullptr)
 			continue;
-		Type scene_node { bc._ph, bc->m_pSceneNode, std::make_tuple(
+		ex::var scene_node { bc->m_pSceneNode, std::make_tuple(
 			&source2sdk::client::CGameSceneNode::m_nodeToWorld
 		) };
 
 		if(i.ex_pawn->m_pEntity == nullptr)
 			continue;
-		Type pawn_entity { i.ex_pawn._ph, i.ex_pawn->m_pEntity, std::make_tuple(
+		ex::var pawn_entity { i.ex_pawn->m_pEntity, std::make_tuple(
 			&source2sdk::entity2::CEntityIdentity::m_name
 		) };
 
-		Type<str_t> pawn_name {i.ex_pawn._ph, BYTES_TO_PTR(pawn_entity->m_name)};
+		ex::var<ex::str_t> pawn_name = EX_BYTES_TO_PTR(pawn_entity->m_name);
 
 		float x = *((float*)scene_node->m_nodeToWorld);
 		float y = *((float*)scene_node->m_nodeToWorld + 1);

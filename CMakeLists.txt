@@ -23,7 +23,12 @@ add_executable(${PROJECT_NAME} main.cpp
         gui/gui.cpp
         gui/gui.h
         matrix3x4.h
-        type.h)
+        type.h
+        externallib/externallib.h
+        externallib/signature.h
+        externallib/signature.cpp
+        externallib/memory.h
+        externallib/memory.cpp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         imgui::imgui
