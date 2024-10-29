@@ -382,7 +382,9 @@ void gui::Render(SomeInfo some_info) noexcept
 		{
 			float viewingAngle = atanf(HEIGHT / ((some_info.view->fov / 43.805f) * c));
 			float h = 160.f * tanf(viewingAngle);
-			float w = h * 0.2f;
+			float w = h * 0.3f;
+
+			float alpha = 200.f / h;
 
 			ImGui::GetWindowDrawList()->AddRect(
 				ImVec2{ a - w, b - h },
@@ -390,21 +392,37 @@ void gui::Render(SomeInfo some_info) noexcept
 				ImColor(255, 0, 0, 255),
 				0,
 				ImDrawFlags_None,
-				2);
+				1.f);
 
-			ImGui::GetWindowDrawList()->AddText(
-				ImVec2{ a + w + 5, b - h },
-				ImColor(255, 0, 0, 255),
-				c_heroname_to_realname(pawn_name->str()).c_str());
+			if(c > 500.f)
+			{
+				ImGui::GetWindowDrawList()->AddText(
+					ImVec2{ a + w + 10 / alpha, b - h },
+					ImColor(255, 0, 0, 255),
+					c_heroname_to_realname(pawn_name->str()).c_str());
+			}
 
+			/*
 			ImGui::GetWindowDrawList()->AddRectFilled(
-				ImVec2{ a + w + 5, b - h + 20.f + 100.f },
-				ImVec2{ a + w + 10, b - h + 20.f },
+				ImVec2{ a + w + 5 / alpha, b },
+				ImVec2{ a + w + 10 / alpha, b - h},
 				ImColor(255, 0, 0, 255));
 
 			ImGui::GetWindowDrawList()->AddRectFilled(
-				ImVec2{ a + w + 5, b - h + 20.f + ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) * 100.f },
-				ImVec2{ a + w + 10, b - h + 20.f },
+				ImVec2{ a + w + 5 / alpha, b - ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) * h },
+				ImVec2{ a + w + 10 / alpha, b },
+				ImColor(0, 255, 0, 255));
+				*/
+
+			ImGui::GetWindowDrawList()->AddLine(
+				ImVec2{ a - w, b - ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) * h },
+				ImVec2{ a - w, b },
+				ImColor(0, 255, 0, 255),
+				1.f);
+
+			ImGui::GetWindowDrawList()->AddCircle(
+				ImVec2{a, b},
+				5,
 				ImColor(0, 255, 0, 255));
 		}
 	}
