@@ -147,7 +147,8 @@ std::vector<player_t> get_all_players(uintptr_t entity_list_sys_ptr)
                 &source2sdk::client::C_CitadelPlayerPawn::m_CBodyComponent,
                 &source2sdk::client::C_CitadelPlayerPawn::m_pEntity,
                 &source2sdk::client::C_CitadelPlayerPawn::m_iHealth,
-                &source2sdk::client::C_CitadelPlayerPawn::m_iMaxHealth
+                &source2sdk::client::C_CitadelPlayerPawn::m_iMaxHealth,
+                &source2sdk::client::C_CitadelPlayerPawn::m_flMouseSensitivity
                 )};
 
         players.push_back(player);
@@ -156,8 +157,94 @@ std::vector<player_t> get_all_players(uintptr_t entity_list_sys_ptr)
     return players;
 }
 
+void move_mouse(int d_x, int d_y)
+{
+    /*
+    if (g_settings->invert_vertical)
+        d_y *= -1;
+        */
+
+    INPUT input = { 0 };
+    input.mi.dwFlags = MOUSEEVENTF_MOVE;
+
+    input.mi.dx = d_x;
+    input.mi.dy = d_y;
+
+    input.type = INPUT_MOUSE;
+    SendInput(
+        1,
+        &input,
+        sizeof(INPUT)
+    );
+}
+
 int main()
 {
+    // GLOBAL FINAL COEF: 0.0442
+
+    /* NO AIM
+    float sens_coef = 2.f;
+    float fov = 90.f / 45.f;
+    float final_coef = 0.02185f
+        * sens_coef
+        * fov;
+    */ // 0.0442
+
+    /*
+    float sens_coef = 1.f;
+    float final_coef = 0.020455f
+        * sens_coef;
+    */
+
+    // final_coef1: 0.0225849f
+    float sens_coef = 2.01f;
+    float aim_sens_coef = 1.f;
+    //float fov = 87.61151886f / 45.f; // 43.02112579f // 87.61151886f
+    float fov = 43.02112579f / 45.f; // 43.02112579f // 87.61151886f
+
+    // 1: 0.0225849f * 0.94887767f = 0.0214303
+    // 2: 0.0225849f * 1.4555f     = 0.03287232
+    // 3: 0.0225849f * 1.964f      = 0.04435674
+
+    float final_coef = 0.0225849f
+        * ((0.5085f * aim_sens_coef) + 0.44037767f)
+        * sens_coef
+        * fov;
+
+    do
+    {
+        //std::cin >> final_coef;
+
+        Sleep(3000);
+
+        timeBeginPeriod(1);
+
+        move_mouse(10, 10);
+        Sleep(50);
+        move_mouse(-10, -10);
+        Sleep(50);
+
+        double nedded_angle_x = 0, nedded_angle_y = 0., current_angle_x = 0., current_angle_y = 0.;
+        for(int i = 0; i < 360; ++i)
+        {
+            nedded_angle_x += 1;
+            nedded_angle_y += 0;
+
+            auto can_move_x = static_cast<int>((nedded_angle_x - current_angle_x) / final_coef);
+            auto can_move_y = static_cast<int>((nedded_angle_y - current_angle_y) / final_coef);
+
+            current_angle_x += static_cast<double>(can_move_x) * final_coef;
+            current_angle_y += static_cast<double>(can_move_y) * final_coef;
+
+            move_mouse(can_move_x, can_move_y);
+            Sleep(1);
+        }
+
+        timeEndPeriod(1);
+    } while(false);
+
+    return 0;
+
 #pragma region CHEAT
     std::cerr << "By 5komar (Catrine)\n" << std::endl;
 
@@ -233,6 +320,10 @@ int main()
         ex::var<uintptr_t> ex_entity_list_ptr
             = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
         auto result = get_all_players(*ex_entity_list_ptr);
+        auto& local_player = *std::ranges::find_if(result, [&](player_t& player)
+            { return player.ex_controller->m_bIsLocalPlayerController; });
+
+        std::cout << local_player.ex_pawn->m_flMouseSensitivity << std::endl;
 
         gui::BeginRender();
         gui::Render({std::move(matrix), std::move(result), std::move(view_render)});

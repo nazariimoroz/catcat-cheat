@@ -113,7 +113,7 @@ void gui::CreateHWindow(const char* draw_on_windows, const char* windowName) noe
 	windowClass.lpfnWndProc = WindowProcess;
 	windowClass.cbClsExtra = 0;
 	windowClass.cbWndExtra = 0;
-	windowClass.hInstance = reinterpret_cast<HINSTANCE>(GetWindowLongA(dow_hwnd, 0));
+	windowClass.hInstance = reinterpret_cast<HINSTANCE>(GetWindowLongA(dow_hwnd, -6));
 	windowClass.hIcon = 0;
 	windowClass.hCursor = 0;
 	windowClass.hbrBackground = WHITE_BRUSH;
