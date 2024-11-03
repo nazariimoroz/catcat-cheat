@@ -30,29 +30,33 @@ struct xyz_t
 };
 
 inline const std::unordered_map<std::string, int> realname_to_head_bone_map = {
-    {"ABRAMS", 7},
-    {"BEBOP", 6},
-    {"DYNAMO", 13},
-    {"GREY TALON", 17},
+    {"TARGETDUMMY", 12},
     {"HAZE", 7},
-    {"INFERNUS", 30},
-    {"IVY", 13},
-    {"KELVIN", 12},
-    {"LADY GEIST", 11},
+    {"INFERNO", 30},
+    {"ATLAS", 7},       // ABRAMS
     {"LASH", 12},
-    {"MCGINNIS", 7},
-    {"MO & KRILL", 10},
-    {"PARADOX", 8},
-    {"POCKET", 13},
-    {"SEVEN", 14},
-    {"SHIV", 13},
-    {"VINDICTA", 7},
+    {"BEBOP", 6},
+    {"HORNET", 7},      // VINDICTA
     {"VISCOUS", 7},
-    {"WARDEN", 11},
+    {"DYNAMO", 13},
+    {"KELVIN", 12},
+
+    {"SYNTH", 13},      // POCKET
+    {"GHOST", 11},      // LADY GEIST
+    {"SHIV", 13},       // LEZO
+
+    {"FORGE", 7},       // MCGINNIS
     {"WRAITH", 7},
-    {"YAMATO", 35},
+    {"KRILL", 10},      // MO & KRILL TODO FIND NEW
+
     {"MIRAGE", 8},
-    {"SANDBOX", 12}
+    {"CHRONO", 8},      // PARADOX
+    {"TENGU", 13},      // IVY PLUSH
+
+    {"WARDEN", 11},
+    {"ORION", 17},      // GREY TALON
+    {"GIGAWATT", 14},   // SEVEN
+    {"YAMATO", 35},
 };
 
 struct bone_t
