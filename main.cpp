@@ -18,6 +18,7 @@
 #include "source2sdk/client/CCitadelPlayerController.hpp"
 #include "source2sdk/client/CBodyComponent.hpp"
 #include "source2sdk/client/CGameSceneNode.hpp"
+#include "source2sdk/client/CSkeletonInstance.hpp"
 #include "source2sdk/entity2/CEntityIdentity.hpp"
 
 #include "source2sdk/worldrenderer/WorldNode_t.hpp"
@@ -148,8 +149,65 @@ std::vector<player_t> get_all_players(uintptr_t entity_list_sys_ptr)
                 &source2sdk::client::C_CitadelPlayerPawn::m_pEntity,
                 &source2sdk::client::C_CitadelPlayerPawn::m_iHealth,
                 &source2sdk::client::C_CitadelPlayerPawn::m_iMaxHealth,
-                &source2sdk::client::C_CitadelPlayerPawn::m_flMouseSensitivity
+                &source2sdk::client::C_CitadelPlayerPawn::m_flMouseSensitivity,
+                &source2sdk::client::C_CitadelPlayerPawn::m_pGameSceneNode
                 )};
+
+        // getting hero name
+        {
+            if(player.ex_pawn->m_pEntity == nullptr)
+                continue;
+            ex::var pawn_entity { player.ex_pawn->m_pEntity, std::make_tuple(
+                &source2sdk::entity2::CEntityIdentity::m_name)};
+
+            ex::var<ex::str_t> pawn_name = EX_BYTES_TO_PTR(pawn_entity->m_name);
+            player.hero_name = c_heroname_to_realname(pawn_name->str()).c_str();
+        }
+
+        // getting current position
+        {
+            if(player.ex_pawn->m_CBodyComponent == nullptr)
+                continue;
+            ex::var bc { player.ex_pawn->m_CBodyComponent, std::make_tuple(
+                &source2sdk::client::CBodyComponent::m_pSceneNode
+            ) };
+
+            if(bc->m_pSceneNode == nullptr)
+                continue;
+            ex::var scene_node { bc->m_pSceneNode, std::make_tuple(
+                &source2sdk::client::CGameSceneNode::m_nodeToWorld
+            ) };
+
+            player.world_pos.x = *((float*)scene_node->m_nodeToWorld);
+            player.world_pos.y = *((float*)scene_node->m_nodeToWorld + 1);
+            player.world_pos.z = *((float*)scene_node->m_nodeToWorld + 2);
+        }
+
+        // getting head bone
+        do {
+            const auto bi_iter = realname_to_head_bone_map.find(player.hero_name);
+            if(bi_iter == realname_to_head_bone_map.end())
+            {
+                player.head_pos = player.world_pos;
+                player.head_pos.z += 92.f;
+                break;
+            }
+            const auto bi_ex_index = bi_iter->second;
+
+            ex::var<source2sdk::client::CSkeletonInstance> ex_gsn {
+                (uintptr_t)player.ex_pawn->m_pGameSceneNode,
+                std::make_tuple(
+                    &source2sdk::client::CSkeletonInstance::m_modelState
+                    )};
+
+            uintptr_t bone_array_address = ex_gsn->m_modelState.m_bone_array;
+
+            uintptr_t bone_address = bone_array_address
+                + sizeof(bone_t) * bi_ex_index;
+
+            ex::var<bone_t> ex_bone { bone_address };
+            player.head_pos = ex_bone.get()->position;
+        } while(false);
 
         players.push_back(player);
     }
@@ -211,6 +269,7 @@ int main()
         * sens_coef
         * fov;
 
+#if 0
     do
     {
         //std::cin >> final_coef;
@@ -242,8 +301,7 @@ int main()
 
         timeEndPeriod(1);
     } while(false);
-
-    return 0;
+#endif
 
 #pragma region CHEAT
     std::cerr << "By 5komar (Catrine)\n" << std::endl;
@@ -323,7 +381,7 @@ int main()
         auto& local_player = *std::ranges::find_if(result, [&](player_t& player)
             { return player.ex_controller->m_bIsLocalPlayerController; });
 
-        std::cout << local_player.ex_pawn->m_flMouseSensitivity << std::endl;
+        std::cout << "Local Pawn Address: "<< std::hex << local_player.ex_pawn.get_address() << std::endl;
 
         gui::BeginRender();
         gui::Render({std::move(matrix), std::move(result), std::move(view_render)});

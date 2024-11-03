@@ -26,7 +26,9 @@ namespace source2sdk::client
     class CModelState
     {
     public:
-        [[maybe_unused]] std::uint8_t pad_0x00[0xd0]; // 0x0
+        [[maybe_unused]] std::uint8_t pad_0x00[0x80]; // 0x0
+        uintptr_t m_bone_array; // 0x80
+        [[maybe_unused]] std::uint8_t pad_0x00_1[0xd0 - 0x80 - sizeof(uintptr_t)]; //
         // metadata: MNetworkEnable
         // metadata: MNetworkChangeCallback "skeletonModelChanged"
         // m_hModel has a template type with potentially unknown template parameters. You can try uncommenting the field below.
