@@ -11,6 +11,8 @@
 
 #include <thread>
 #include <chrono>
+#include <imgui.h>
+#include <glm/detail/func_geometric.inl>
 
 #include <gui/gui.h>
 
@@ -91,10 +93,15 @@ MODULEINFO getModuleInfo(HANDLE processHandle, const std::string& moduleName)
     return modInfo;
 }
 
-std::vector<player_t> get_all_players(uintptr_t entity_list_sys_ptr)
+/**
+ * player_list, index of local_player
+ */
+std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_sys_ptr)
 {
     std::vector<player_t> players;
     ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 0x10 ;
+
+    size_t index_of_local_player = 0;
 
     for(int i = 0; i < 20; ++i)
     {
@@ -209,10 +216,15 @@ std::vector<player_t> get_all_players(uintptr_t entity_list_sys_ptr)
             player.head_pos = ex_bone.get()->position;
         } while(false);
 
-        players.push_back(player);
+        if(player.ex_controller->m_bIsLocalPlayerController)
+        {
+            index_of_local_player = players.size();
+        }
+
+        players.push_back(std::move(player));
     }
 
-    return players;
+    return { players, index_of_local_player };
 }
 
 void move_mouse(int d_x, int d_y)
@@ -236,6 +248,25 @@ void move_mouse(int d_x, int d_y)
     );
 }
 
+float get_coef(float fov)
+{
+    float sens_coef = 2.01f;
+    float aim_sens_coef = 1.f;
+    //float fov = 87.61151886f / 45.f; // 43.02112579f // 87.61151886f
+    fov /= 45.f; // 43.02112579f // 87.61151886f
+
+    // 1: 0.0225849f * 0.94887767f = 0.0214303
+    // 2: 0.0225849f * 1.4555f     = 0.03287232
+    // 3: 0.0225849f * 1.964f      = 0.04435674
+
+    float final_coef = 0.0225849f
+        * ((0.5085f * aim_sens_coef) + 0.44037767f)
+        * sens_coef
+        * fov;
+
+    return final_coef;
+}
+
 int main()
 {
     // GLOBAL FINAL COEF: 0.0442
@@ -255,19 +286,6 @@ int main()
     */
 
     // final_coef1: 0.0225849f
-    float sens_coef = 2.01f;
-    float aim_sens_coef = 1.f;
-    //float fov = 87.61151886f / 45.f; // 43.02112579f // 87.61151886f
-    float fov = 43.02112579f / 45.f; // 43.02112579f // 87.61151886f
-
-    // 1: 0.0225849f * 0.94887767f = 0.0214303
-    // 2: 0.0225849f * 1.4555f     = 0.03287232
-    // 3: 0.0225849f * 1.964f      = 0.04435674
-
-    float final_coef = 0.0225849f
-        * ((0.5085f * aim_sens_coef) + 0.44037767f)
-        * sens_coef
-        * fov;
 
 #if 0
     do
@@ -364,28 +382,69 @@ int main()
 
     while (gui::isRunning)
     {
-        ex::var<Urho3D::Matrix3x4> matrix
-            = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewMatrixOffset;
-
-        ex::var<ViewRender> view_render;
-        {
-            ex::var<uintptr_t> vr_ptr
-                = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewRenderOffset;
-
-            view_render = decltype(view_render){ *vr_ptr.get() };
-        }
+        if(ImGui::IsKeyPressed(ImGuiKey_0))
+            break;
 
         ex::var<uintptr_t> ex_entity_list_ptr
             = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
-        auto result = get_all_players(*ex_entity_list_ptr);
-        auto& local_player = *std::ranges::find_if(result, [&](player_t& player)
-            { return player.ex_controller->m_bIsLocalPlayerController; });
+        auto [ players_list, local_player_i ] = get_all_players(*ex_entity_list_ptr);
+        auto& local_player = players_list[local_player_i];
 
-        std::cout << "Local Pawn Address: "<< std::hex << local_player.ex_pawn.get_address() << std::endl;
+        // initing local_player
+        {
+            ex::var<Urho3D::Matrix3x4> matrix
+                = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewMatrixOffset;
+
+            ex::var<ViewRender> view_render;
+            {
+                ex::var<uintptr_t> vr_ptr
+                    = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewRenderOffset;
+
+                view_render = decltype(view_render){ *vr_ptr.get() };
+            }
+
+            local_player.matrix = std::move(matrix);
+            local_player.view_render = std::move(view_render);
+        }
 
         gui::BeginRender();
-        gui::Render({std::move(matrix), std::move(result), std::move(view_render)});
+        gui::Render(players_list, local_player);
         gui::EndRender();
+
+        player_t* closest_player = nullptr;
+        xyz_t closest_player_screen = {0, 0, INFINITY};
+        for (auto& i : players_list)
+        {
+            if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
+                continue;
+
+            auto [xyw, is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
+            if(!is_ok)
+                continue;
+
+            if(closest_player_screen.z > xyw.z)
+            {
+                closest_player_screen = xyw;
+                closest_player = &i;
+            }
+        }
+
+        if(closest_player)
+        {
+            xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
+
+            auto result = closest_player_screen - cursor_pos;
+            result.z = 0;
+
+            if(std::abs(result.x) < 10.f && std::abs(result.y) < 10.f)
+                continue;
+
+            auto dir = glm::normalize(static_cast<glm::vec3>(result)) * 10.f;
+            dir.x = std::clamp(dir.x, -std::abs(result.x), std::abs(result.x));
+            dir.y = std::clamp(dir.y, -std::abs(result.y), std::abs(result.y));
+
+            move_mouse(dir.x, dir.y);
+        }
     }
 
     // destroy gui

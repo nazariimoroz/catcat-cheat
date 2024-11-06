@@ -10,7 +10,7 @@
 struct SomeInfo
 {
 	ex::var<Urho3D::Matrix3x4> matrix;
-	std::vector<player_t> pawns;
+
 	ex::var<ViewRender> view;
 };
 
@@ -55,5 +55,7 @@ namespace gui
 
 	void BeginRender() noexcept;
 	void EndRender() noexcept;
-	void Render(SomeInfo some_info) noexcept;
+	void Render(std::vector<player_t>& players_list, player_t& local_player) noexcept;
+
+	std::tuple<xyz_t, bool> world_to_screen(xyz_t pos, Urho3D::Matrix3x4* mtx);
 }

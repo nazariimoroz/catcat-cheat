@@ -293,7 +293,7 @@ void gui::EndRender() noexcept
         ResetDevice();
 }
 
-std::tuple<xyz_t, bool> world_to_screen(xyz_t pos, Urho3D::Matrix3x4* mtx)
+std::tuple<xyz_t, bool> gui::world_to_screen(xyz_t pos, Urho3D::Matrix3x4* mtx)
 {
     const auto [in_x, in_y, in_z] = pos;
     float _x = mtx->m00_ * in_x + mtx->m01_ * in_y + mtx->m02_ * in_z + mtx->m03_;
@@ -333,7 +333,7 @@ std::tuple<xyz_t, bool> world_to_screen(xyz_t pos, Urho3D::Matrix3x4* mtx)
     return {{_x, _y, w}, true};
 }
 
-void gui::Render(SomeInfo some_info) noexcept
+void gui::Render(std::vector<player_t>& players_list, player_t& local_player) noexcept
 {
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize({static_cast<float>(WIDTH), static_cast<float>(HEIGHT)});
@@ -348,12 +348,7 @@ void gui::Render(SomeInfo some_info) noexcept
         ImGuiWindowFlags_NoTitleBar
     );
 
-    auto& local_player = *std::ranges::find_if(some_info.pawns, [&](auto& p)
-    {
-        return p.ex_controller->m_bIsLocalPlayerController;
-    });
-
-    for (auto& i : some_info.pawns)
+    for (auto& i : players_list)
     {
         struct GG
         {
@@ -365,8 +360,8 @@ void gui::Render(SomeInfo some_info) noexcept
         if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
             continue;
 
-        auto [bottom_pos, bottom_pos_is_ok] = world_to_screen(i.world_pos, some_info.matrix.get());
-        auto [head_pos, head_pos_is_ok] = world_to_screen(i.head_pos, some_info.matrix.get());
+        auto [bottom_pos, bottom_pos_is_ok] = gui::world_to_screen(i.world_pos, local_player.matrix.get());
+        auto [head_pos, head_pos_is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
 
         if (!bottom_pos_is_ok || !head_pos_is_ok)
             continue;
@@ -375,7 +370,6 @@ void gui::Render(SomeInfo some_info) noexcept
         {
             float width = std::abs(head_pos.y - bottom_pos.y) * 0.7;
             float height_add = std::abs(head_pos.y - bottom_pos.y) * 0.1;
-
 
             ImVec2 p_min = ImVec2{bottom_pos.x + width / 2.f,
                 head_pos.y + bottom_pos.z * 0.005f - height_add};

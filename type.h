@@ -6,7 +6,9 @@
 #include <string>
 #include <algorithm>
 #include <unordered_map>
+#include <glm/vec3.hpp>
 
+#include "matrix3x4.h"
 #include "source2sdk/client/CCitadelPlayerController.hpp"
 #include "source2sdk/client/C_CitadelPlayerPawn.hpp"
 
@@ -27,7 +29,25 @@ struct xyz_t
     float x;
     float y;
     float z;
+
+    friend xyz_t operator+(const xyz_t& a, const xyz_t& b)
+    {
+        return { a.x + b.x, a.y + b.y, a.z + b.z };
+    }
+    friend xyz_t operator-(const xyz_t& a, const xyz_t& b)
+    {
+        return { a.x - b.x, a.y - b.y, a.z - b.z };
+    }
+
+    explicit operator glm::vec3() const
+    {
+        return {x, y, z};
+    }
 };
+
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 inline const std::unordered_map<std::string, int> realname_to_head_bone_map = {
     {"TARGETDUMMY", 12},
@@ -71,6 +91,12 @@ struct player_t
 {
     ex::var<source2sdk::client::CCitadelPlayerController> ex_controller;
     ex::var<source2sdk::client::C_CitadelPlayerPawn> ex_pawn;
+
+    // local only
+    ex::var<ViewRender> view_render;
+
+    // local only
+    ex::var<Urho3D::Matrix3x4> matrix;
 
     std::string hero_name;
 
