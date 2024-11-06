@@ -28,7 +28,9 @@ add_executable(${PROJECT_NAME} main.cpp
         externallib/signature.h
         externallib/signature.cpp
         externallib/memory.h
-        externallib/memory.cpp)
+        externallib/memory.cpp
+        settings.h
+        global_t.h)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         imgui::imgui

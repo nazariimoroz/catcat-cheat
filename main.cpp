@@ -13,10 +13,13 @@
 #include <chrono>
 #include <imgui.h>
 #include <glm/detail/func_geometric.inl>
+#include <glm/gtx/vector_angle.hpp>
 
 #include <gui/gui.h>
 
+#include "global_t.h"
 #include "matrix3x4.h"
+#include "settings.h"
 #include "source2sdk/client/CCitadelPlayerController.hpp"
 #include "source2sdk/client/CBodyComponent.hpp"
 #include "source2sdk/client/CGameSceneNode.hpp"
@@ -157,7 +160,8 @@ std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_
                 &source2sdk::client::C_CitadelPlayerPawn::m_iHealth,
                 &source2sdk::client::C_CitadelPlayerPawn::m_iMaxHealth,
                 &source2sdk::client::C_CitadelPlayerPawn::m_flMouseSensitivity,
-                &source2sdk::client::C_CitadelPlayerPawn::m_pGameSceneNode
+                &source2sdk::client::C_CitadelPlayerPawn::m_pGameSceneNode,
+                &source2sdk::client::C_CitadelPlayerPawn::m_lifeState
                 )};
 
         // getting hero name
@@ -411,40 +415,77 @@ int main()
         gui::Render(players_list, local_player);
         gui::EndRender();
 
-        player_t* closest_player = nullptr;
-        xyz_t closest_player_screen = {0, 0, INFINITY};
-        for (auto& i : players_list)
+        bool aim_worked = false;
+        if(
+            (settings_t::aim_in_scope && local_player.view_render->fov < 80.f) ||
+            (settings_t::aim_without_scope && local_player.view_render->fov > 80.f))
         {
-            if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
-                continue;
-
-            auto [xyw, is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
-            if(!is_ok)
-                continue;
-
-            if(closest_player_screen.z > xyw.z)
+            player_t* closest_player = nullptr;
+            xyz_t closest_player_screen = {0, 0, INFINITY};
+            for (auto& i : players_list)
             {
-                closest_player_screen = xyw;
-                closest_player = &i;
+                if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
+                    continue;
+
+                if(i.ex_pawn->m_lifeState != 0)
+                    continue;
+
+                auto [xyw, is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
+                if(!is_ok)
+                    continue;
+
+                if(xyw.z >= settings_t::aim_max_distance)
+                    continue;
+
+                if(!global_t::aim_locked_on_hero.empty() && xyw.z <= settings_t::aim_lost_distance)
+                {
+                    if(i.hero_name == global_t::aim_locked_on_hero)
+                    {
+                        closest_player = &i;
+                        closest_player_screen = xyw;
+                        break;
+                    }
+                }
+
+                if(closest_player_screen.z > xyw.z)
+                {
+                    closest_player_screen = xyw;
+                    closest_player = &i;
+                }
+            }
+
+            if(closest_player)
+            {
+                if(global_t::aim_locked_on_hero.empty()
+                    || global_t::aim_locked_on_hero != closest_player->hero_name)
+                {
+                    global_t::aim_locked_on_hero = closest_player->hero_name;
+                }
+                xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
+
+                auto result = closest_player_screen - cursor_pos;
+                result.z = 0;
+
+                auto veca = glm::normalize(static_cast<glm::vec3>(local_player.matrix->forward_vector()));
+                auto vecb = glm::normalize(static_cast<glm::vec3>(
+                    local_player.world_pos - closest_player->head_pos));
+
+                auto dir = glm::normalize(static_cast<glm::vec3>(result))
+                    * settings_t::aim_sense
+                    * (500.f / closest_player_screen.z);
+                dir.x = std::clamp(dir.x, -std::abs(result.x), std::abs(result.x));
+                dir.y = std::clamp(dir.y, -std::abs(result.y), std::abs(result.y));
+
+                move_mouse(dir.x, dir.y);
+
+                aim_worked = true;
             }
         }
-
-        if(closest_player)
+        if(!aim_worked)
         {
-            xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
-
-            auto result = closest_player_screen - cursor_pos;
-            result.z = 0;
-
-            if(std::abs(result.x) < 10.f && std::abs(result.y) < 10.f)
-                continue;
-
-            auto dir = glm::normalize(static_cast<glm::vec3>(result)) * 10.f;
-            dir.x = std::clamp(dir.x, -std::abs(result.x), std::abs(result.x));
-            dir.y = std::clamp(dir.y, -std::abs(result.y), std::abs(result.y));
-
-            move_mouse(dir.x, dir.y);
+            global_t::aim_locked_on_hero.clear();
         }
+
     }
 
     // destroy gui

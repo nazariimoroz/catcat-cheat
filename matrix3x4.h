@@ -22,6 +22,27 @@
 
 #pragma once
 
+struct xyz_t
+{
+    float x;
+    float y;
+    float z;
+
+    friend xyz_t operator+(const xyz_t& a, const xyz_t& b)
+    {
+        return { a.x + b.x, a.y + b.y, a.z + b.z };
+    }
+    friend xyz_t operator-(const xyz_t& a, const xyz_t& b)
+    {
+        return { a.x - b.x, a.y - b.y, a.z - b.z };
+    }
+
+    explicit operator glm::vec3() const
+    {
+        return {x, y, z};
+    }
+};
+
 namespace Urho3D
 {
 
@@ -319,6 +340,8 @@ public:
     {
         return (atan2(-m12_, m22_) * 180.f) / 3.14f;
     }
+
+    xyz_t forward_vector() const { return xyz_t(m13_, m23_, m33_); }
 };
 
 /// Multiply a 3x4 matrix with a scalar.

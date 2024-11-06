@@ -24,27 +24,6 @@ struct EntitySystem
     uintptr_t first_entry_ptr;
 };
 
-struct xyz_t
-{
-    float x;
-    float y;
-    float z;
-
-    friend xyz_t operator+(const xyz_t& a, const xyz_t& b)
-    {
-        return { a.x + b.x, a.y + b.y, a.z + b.z };
-    }
-    friend xyz_t operator-(const xyz_t& a, const xyz_t& b)
-    {
-        return { a.x - b.x, a.y - b.y, a.z - b.z };
-    }
-
-    explicit operator glm::vec3() const
-    {
-        return {x, y, z};
-    }
-};
-
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
