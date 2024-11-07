@@ -35,6 +35,8 @@ add_executable(${PROJECT_NAME} main.cpp
 target_link_libraries(${PROJECT_NAME} PRIVATE
         imgui::imgui
         d3d9
+        d3d11
+        libMinHook-x64-v141-mtd.lib
         d3dcompiler
         dxgi
         Shell32

@@ -13,7 +13,6 @@
 #include <chrono>
 #include <imgui.h>
 #include <glm/detail/func_geometric.inl>
-#include <glm/gtx/vector_angle.hpp>
 
 #include <gui/gui.h>
 
@@ -102,37 +101,39 @@ MODULEINFO getModuleInfo(HANDLE processHandle, const std::string& moduleName)
 std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_sys_ptr)
 {
     std::vector<player_t> players;
-    ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 0x10 ;
+    ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 0x10;
 
     size_t index_of_local_player = 0;
 
-    for(int i = 0; i < 20; ++i)
+    for (int i = 0; i < 20; ++i)
     {
-        player_t player {};
+        player_t player{};
         ex::var<uintptr_t> ex_controller_ptr
             = (*ex_entity_list_ptr) + 0x78 * (i & 0x1FF);
 
-        if(*ex_controller_ptr == 0)
+        if (*ex_controller_ptr == 0)
             continue;
 
-        ex::var<source2sdk::client::CCitadelPlayerController> ex_controller { *ex_controller_ptr,
+        ex::var<source2sdk::client::CCitadelPlayerController> ex_controller{
+            *ex_controller_ptr,
             std::make_tuple(
                 &source2sdk::client::CCitadelPlayerController::m_iTeamNum,
                 &source2sdk::client::CCitadelPlayerController::m_pEntity,
                 &source2sdk::client::CCitadelPlayerController::m_hPawn,
                 &source2sdk::client::CCitadelPlayerController::m_bIsLocalPlayerController
-                )};
+            )
+        };
 
-        if(!ex_controller->m_pEntity)
+        if (!ex_controller->m_pEntity)
             continue;
 
         ex::var ex_entity = ex_controller->m_pEntity;
         const auto designer_name_ptr = *(uintptr_t*)ex_entity->m_designerName;
-        if(!designer_name_ptr)
+        if (!designer_name_ptr)
             continue;
 
         ex::var<ex::str_t> designer_name = designer_name_ptr;
-        if( strcmp(designer_name->str(), "citadel_player_controller") != 0)
+        if (strcmp(designer_name->str(), "citadel_player_controller") != 0)
             continue;
 
         player.ex_controller = std::move(ex_controller);
@@ -142,18 +143,19 @@ std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_
             = entity_list_sys_ptr + (0x8 * ((pawn_index & 0x7FFF) >> 0x9) + 0x10);
         ex::var<uintptr_t> ex_pawns_entity_list_ptr = pawns_entity_list_sys_ptr;
 
-        if(*ex_pawns_entity_list_ptr == 0)
+        if (*ex_pawns_entity_list_ptr == 0)
             continue;
 
         uintptr_t pawn_ptr_ptr = (*ex_pawns_entity_list_ptr) + 0x78 * (pawn_index & 0x1FF);
-        if(pawn_ptr_ptr == 0)
+        if (pawn_ptr_ptr == 0)
             continue;
 
         ex::var<uintptr_t> ex_pawn_ptr = pawn_ptr_ptr;
-        if(*ex_pawn_ptr == 0)
+        if (*ex_pawn_ptr == 0)
             continue;
 
-        player.ex_pawn = ex::var<source2sdk::client::C_CitadelPlayerPawn>{ *ex_pawn_ptr,
+        player.ex_pawn = ex::var<source2sdk::client::C_CitadelPlayerPawn>{
+            *ex_pawn_ptr,
             std::make_tuple(
                 &source2sdk::client::C_CitadelPlayerPawn::m_CBodyComponent,
                 &source2sdk::client::C_CitadelPlayerPawn::m_pEntity,
@@ -162,14 +164,17 @@ std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_
                 &source2sdk::client::C_CitadelPlayerPawn::m_flMouseSensitivity,
                 &source2sdk::client::C_CitadelPlayerPawn::m_pGameSceneNode,
                 &source2sdk::client::C_CitadelPlayerPawn::m_lifeState
-                )};
+            )
+        };
 
         // getting hero name
         {
-            if(player.ex_pawn->m_pEntity == nullptr)
+            if (player.ex_pawn->m_pEntity == nullptr)
                 continue;
-            ex::var pawn_entity { player.ex_pawn->m_pEntity, std::make_tuple(
-                &source2sdk::entity2::CEntityIdentity::m_name)};
+            ex::var pawn_entity{
+                player.ex_pawn->m_pEntity, std::make_tuple(
+                    &source2sdk::entity2::CEntityIdentity::m_name)
+            };
 
             ex::var<ex::str_t> pawn_name = EX_BYTES_TO_PTR(pawn_entity->m_name);
             player.hero_name = c_heroname_to_realname(pawn_name->str()).c_str();
@@ -177,17 +182,21 @@ std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_
 
         // getting current position
         {
-            if(player.ex_pawn->m_CBodyComponent == nullptr)
+            if (player.ex_pawn->m_CBodyComponent == nullptr)
                 continue;
-            ex::var bc { player.ex_pawn->m_CBodyComponent, std::make_tuple(
-                &source2sdk::client::CBodyComponent::m_pSceneNode
-            ) };
+            ex::var bc{
+                player.ex_pawn->m_CBodyComponent, std::make_tuple(
+                    &source2sdk::client::CBodyComponent::m_pSceneNode
+                )
+            };
 
-            if(bc->m_pSceneNode == nullptr)
+            if (bc->m_pSceneNode == nullptr)
                 continue;
-            ex::var scene_node { bc->m_pSceneNode, std::make_tuple(
-                &source2sdk::client::CGameSceneNode::m_nodeToWorld
-            ) };
+            ex::var scene_node{
+                bc->m_pSceneNode, std::make_tuple(
+                    &source2sdk::client::CGameSceneNode::m_nodeToWorld
+                )
+            };
 
             player.world_pos.x = *((float*)scene_node->m_nodeToWorld);
             player.world_pos.y = *((float*)scene_node->m_nodeToWorld + 1);
@@ -195,9 +204,10 @@ std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_
         }
 
         // getting head bone
-        do {
+        do
+        {
             const auto bi_iter = realname_to_head_bone_map.find(player.hero_name);
-            if(bi_iter == realname_to_head_bone_map.end())
+            if (bi_iter == realname_to_head_bone_map.end())
             {
                 player.head_pos = player.world_pos;
                 player.head_pos.z += 92.f;
@@ -205,22 +215,24 @@ std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_
             }
             const auto bi_ex_index = bi_iter->second;
 
-            ex::var<source2sdk::client::CSkeletonInstance> ex_gsn {
+            ex::var<source2sdk::client::CSkeletonInstance> ex_gsn{
                 (uintptr_t)player.ex_pawn->m_pGameSceneNode,
                 std::make_tuple(
                     &source2sdk::client::CSkeletonInstance::m_modelState
-                    )};
+                )
+            };
 
             uintptr_t bone_array_address = ex_gsn->m_modelState.m_bone_array;
 
             uintptr_t bone_address = bone_array_address
                 + sizeof(bone_t) * bi_ex_index;
 
-            ex::var<bone_t> ex_bone { bone_address };
+            ex::var<bone_t> ex_bone{bone_address};
             player.head_pos = ex_bone.get()->position;
-        } while(false);
+        }
+        while (false);
 
-        if(player.ex_controller->m_bIsLocalPlayerController)
+        if (player.ex_controller->m_bIsLocalPlayerController)
         {
             index_of_local_player = players.size();
         }
@@ -228,7 +240,7 @@ std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_
         players.push_back(std::move(player));
     }
 
-    return { players, index_of_local_player };
+    return {players, index_of_local_player};
 }
 
 void move_mouse(int d_x, int d_y)
@@ -238,7 +250,7 @@ void move_mouse(int d_x, int d_y)
         d_y *= -1;
         */
 
-    INPUT input = { 0 };
+    INPUT input = {0};
     input.mi.dwFlags = MOUSEEVENTF_MOVE;
 
     input.mi.dx = d_x;
@@ -263,7 +275,7 @@ float get_coef(float fov)
     // 2: 0.0225849f * 1.4555f     = 0.03287232
     // 3: 0.0225849f * 1.964f      = 0.04435674
 
-    float final_coef = 0.0225849f
+    float final_coef = 0.0226762f
         * ((0.5085f * aim_sens_coef) + 0.44037767f)
         * sens_coef
         * fov;
@@ -296,6 +308,10 @@ int main()
     {
         //std::cin >> final_coef;
 
+        // 87.61151886f
+        // 43.02112579f
+        float final_coef = get_coef(43.02112579f);
+
         Sleep(3000);
 
         timeBeginPeriod(1);
@@ -323,6 +339,8 @@ int main()
 
         timeEndPeriod(1);
     } while(false);
+
+    return 1;
 #endif
 
 #pragma region CHEAT
@@ -354,21 +372,25 @@ int main()
     std::vector<uint8_t> memory;
     memory.resize(module_info.SizeOfImage);
     ex::read_memory_into_array((char*)memory.data(),
-        ex::get_global_handle(),
-        reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll),
-        module_info.SizeOfImage);
+                               ex::get_global_handle(),
+                               reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll),
+                               module_info.SizeOfImage);
 
     std::cout << "dwLocalPlayerController:" << std::endl;
-    uintptr_t localPlayerOffset = localPlayerSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+    uintptr_t localPlayerOffset = localPlayerSig.find(memory, ex::get_global_handle(),
+                                                      reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
 
     std::cout << "dwViewMatrix:" << std::endl;
-    uintptr_t viewMatrixOffset = viewMatrixSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+    uintptr_t viewMatrixOffset = viewMatrixSig.find(memory, ex::get_global_handle(),
+                                                    reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
 
     std::cout << "dwViewRender:" << std::endl;
-    uintptr_t viewRenderOffset = viewRenderSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+    uintptr_t viewRenderOffset = viewRenderSig.find(memory, ex::get_global_handle(),
+                                                    reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
 
     std::cout << "dwEntityList:" << std::endl;
-    uintptr_t entityListOffset = entityListSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+    uintptr_t entityListOffset = entityListSig.find(memory, ex::get_global_handle(),
+                                                    reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
 
     std::cout << "dwGameEntitySystem:" << std::endl;
     gameEntitySystemSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
@@ -378,7 +400,7 @@ int main()
 #pragma endregion CHEAT
 
     gui::CreateHWindow("Deadlock", "Cheat Menu");
-    if(!gui::CreateDevice())
+    if (!gui::CreateDevice())
     {
         return 1;
     }
@@ -386,12 +408,12 @@ int main()
 
     while (gui::isRunning)
     {
-        if(ImGui::IsKeyPressed(ImGuiKey_0))
+        if (GetAsyncKeyState(VK_BACK) & 0x8000)
             break;
 
         ex::var<uintptr_t> ex_entity_list_ptr
             = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
-        auto [ players_list, local_player_i ] = get_all_players(*ex_entity_list_ptr);
+        auto [players_list, local_player_i] = get_all_players(*ex_entity_list_ptr);
         auto& local_player = players_list[local_player_i];
 
         // initing local_player
@@ -404,7 +426,7 @@ int main()
                 ex::var<uintptr_t> vr_ptr
                     = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewRenderOffset;
 
-                view_render = decltype(view_render){ *vr_ptr.get() };
+                view_render = decltype(view_render){*vr_ptr.get()};
             }
 
             local_player.matrix = std::move(matrix);
@@ -415,77 +437,80 @@ int main()
         gui::Render(players_list, local_player);
         gui::EndRender();
 
+
         bool aim_worked = false;
-        if(
-            (settings_t::aim_in_scope && local_player.view_render->fov < 80.f) ||
-            (settings_t::aim_without_scope && local_player.view_render->fov > 80.f))
+        do
         {
-            player_t* closest_player = nullptr;
-            xyz_t closest_player_screen = {0, 0, INFINITY};
-            for (auto& i : players_list)
+            if (
+                (settings_t::aim_scope == scope_t::scope_only && local_player.view_render->fov < 80.f) ||
+                (settings_t::aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
+                settings_t::aim_scope == scope_t::scope_and_noscope)
             {
-                if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
-                    continue;
-
-                if(i.ex_pawn->m_lifeState != 0)
-                    continue;
-
-                auto [xyw, is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
-                if(!is_ok)
-                    continue;
-
-                if(xyw.z >= settings_t::aim_max_distance)
-                    continue;
-
-                if(!global_t::aim_locked_on_hero.empty() && xyw.z <= settings_t::aim_lost_distance)
+                if (!(GetAsyncKeyState(VK_LBUTTON) & 0x8000))
                 {
-                    if(i.hero_name == global_t::aim_locked_on_hero)
+                    break;
+                }
+                player_t* closest_player = nullptr;
+                xyz_t closest_player_screen = {0, 0, INFINITY};
+                for (auto& i : players_list)
+                {
+                    if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
+                        continue;
+
+                    if (i.ex_pawn->m_lifeState != 0)
+                        continue;
+
+                    auto [xyw, is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
+                    if (!is_ok)
+                        continue;
+
+                    if (xyw.z >= settings_t::aim_max_distance)
+                        continue;
+
+                    if (!global_t::aim_locked_on_hero.empty() && xyw.z <= settings_t::aim_lost_distance)
                     {
-                        closest_player = &i;
+                        if (i.hero_name == global_t::aim_locked_on_hero)
+                        {
+                            closest_player = &i;
+                            closest_player_screen = xyw;
+                            break;
+                        }
+                    }
+
+                    if (closest_player_screen.z > xyw.z)
+                    {
                         closest_player_screen = xyw;
-                        break;
+                        closest_player = &i;
                     }
                 }
 
-                if(closest_player_screen.z > xyw.z)
+                if (closest_player)
                 {
-                    closest_player_screen = xyw;
-                    closest_player = &i;
+                    if (global_t::aim_locked_on_hero.empty()
+                        || global_t::aim_locked_on_hero != closest_player->hero_name)
+                    {
+                        global_t::aim_locked_on_hero = closest_player->hero_name;
+                    }
+                    xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
+
+                    auto result = closest_player_screen - cursor_pos;
+                    result.z = 0;
+
+                    float fov_per_pixel = local_player.view_render->fov / (float)gui::WIDTH / 2;
+                    result.x = (result.x * fov_per_pixel) / get_coef(local_player.view_render->fov);
+                    result.y = (result.y * fov_per_pixel) / get_coef(local_player.view_render->fov);
+
+                    move_mouse(result.x, result.y);
+
+                    aim_worked = true;
                 }
-            }
-
-            if(closest_player)
-            {
-                if(global_t::aim_locked_on_hero.empty()
-                    || global_t::aim_locked_on_hero != closest_player->hero_name)
-                {
-                    global_t::aim_locked_on_hero = closest_player->hero_name;
-                }
-                xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
-
-                auto result = closest_player_screen - cursor_pos;
-                result.z = 0;
-
-                auto veca = glm::normalize(static_cast<glm::vec3>(local_player.matrix->forward_vector()));
-                auto vecb = glm::normalize(static_cast<glm::vec3>(
-                    local_player.world_pos - closest_player->head_pos));
-
-                auto dir = glm::normalize(static_cast<glm::vec3>(result))
-                    * settings_t::aim_sense
-                    * (500.f / closest_player_screen.z);
-                dir.x = std::clamp(dir.x, -std::abs(result.x), std::abs(result.x));
-                dir.y = std::clamp(dir.y, -std::abs(result.y), std::abs(result.y));
-
-                move_mouse(dir.x, dir.y);
-
-                aim_worked = true;
             }
         }
-        if(!aim_worked)
+        while (false);
+        if (!aim_worked)
         {
             global_t::aim_locked_on_hero.clear();
         }
-
     }
 
     // destroy gui
@@ -496,5 +521,3 @@ int main()
     //CloseHandle(processHandle);
     return 0;
 }
-
-
