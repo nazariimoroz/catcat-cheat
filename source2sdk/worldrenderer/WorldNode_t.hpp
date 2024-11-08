@@ -29,8 +29,8 @@ namespace source2sdk::worldrenderer
     {
     public:
         // m_sceneObjects has a template type with potentially unknown template parameters. You can try uncommenting the field below.
-        CUtlVector<worldrenderer::SceneObject_t> m_sceneObjects;
-        //char m_sceneObjects[0x18]; // 0x0
+        // CUtlVector<worldrenderer::SceneObject_t> m_sceneObjects;
+        char m_sceneObjects[0x18]; // 0x0        
         // m_infoOverlays has a template type with potentially unknown template parameters. You can try uncommenting the field below.
         // CUtlVector<worldrenderer::InfoOverlayData_t> m_infoOverlays;
         char m_infoOverlays[0x18]; // 0x18        

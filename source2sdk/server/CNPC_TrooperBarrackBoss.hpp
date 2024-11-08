@@ -20,6 +20,7 @@ namespace source2sdk::server
     class CNPC_TrooperBarrackBoss : public server::CNPC_TrooperBoss
     {
     public:
+        [[maybe_unused]] std::uint8_t pad_0x1b20[0x8];
         // No schema binary for binding
     };
     #pragma pack(pop)

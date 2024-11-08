@@ -72,7 +72,6 @@ namespace source2sdk::server
         entity2::GameTime_t m_flLastPhysicsInfluenceTime; // 0xad8        
         entity2::GameTime_t m_flFadeOutStartTime; // 0xadc        
         float m_flFadeTime; // 0xae0        
-        // metadata: MNetworkDisable
         Vector m_vecLastOrigin; // 0xae4        
         entity2::GameTime_t m_flAwakeTime; // 0xaf0        
         entity2::GameTime_t m_flLastOriginChangeTime; // 0xaf4        

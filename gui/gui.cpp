@@ -137,7 +137,7 @@ void gui::CreateHWindow(const char* draw_on_windows, const char* windowName) noe
     HEIGHT = rect.bottom - rect.top;
     std::cout << X << " " << Y << " " << WIDTH << " " << HEIGHT << std::endl;
     window = CreateWindowEx(
-        WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TOOLWINDOW,
+        WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TOOLWINDOW, //WS_EX_TRANSPARENT ,
         "class001",
         windowName,
         WS_POPUP,
@@ -241,6 +241,47 @@ void gui::DestroyImGui() noexcept
     ImGui::DestroyContext();
 }
 
+void draw_menu()
+{
+    static bool insert_key_pressed = false;
+    static bool show_menu = false;
+    if (GetAsyncKeyState(VK_INSERT) & 0x1) {
+        if (!insert_key_pressed) {
+            show_menu = !show_menu;
+            insert_key_pressed = true;
+        }
+    }
+    else {
+        insert_key_pressed = false;
+    }
+
+    if (show_menu) {
+        ImGui::SetNextWindowPos({0, 0});
+        ImGui::SetNextWindowSize({static_cast<float>(gui::WIDTH), static_cast<float>(gui::HEIGHT)});
+        ImGui::Begin("Deadlock Cheat");
+
+        if (ImGui::BeginTabBar("##tabs")) {
+            if (ImGui::BeginTabItem("Render")) {
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Aimbot")) {
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Movement")) {
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Extra")) {
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Config")) {
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
+        ImGui::End();
+    }
+}
+
 void gui::BeginRender() noexcept
 {
     RECT rect;
@@ -335,6 +376,8 @@ std::tuple<xyz_t, bool> gui::world_to_screen(xyz_t pos, Urho3D::Matrix3x4* mtx)
 
 void gui::Render(std::vector<player_t>& players_list, player_t& local_player) noexcept
 {
+    draw_menu();
+
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize({static_cast<float>(WIDTH), static_cast<float>(HEIGHT)});
     ImGui::Begin(

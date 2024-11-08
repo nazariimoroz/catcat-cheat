@@ -24,6 +24,14 @@ struct EntitySystem
     uintptr_t first_entry_ptr;
 };
 
+struct SenseSetting
+{
+    char _ggg[0x220];
+    float global_sense;
+    char _gggg[0x25C];
+    float aim_sense_coef;
+};
+
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }

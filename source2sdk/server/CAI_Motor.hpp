@@ -1,6 +1,10 @@
 #pragma once
 #include "source2sdk/client/CAI_Component.hpp"
 #include "source2sdk/client/CSimpleSimTimer.hpp"
+#include "source2sdk/server/AI_Motor_DefaultFacing_t.hpp"
+#include "source2sdk/server/AI_Motor_MovementFacingMode_t.hpp"
+#include "source2sdk/server/AI_ScheduleFacingTargetPriority_t.hpp"
+#include "source2sdk/server/CAI_InterestTarget.hpp"
 #include "source2sdk/server/CAI_MotorGroundAnimGraph.hpp"
 #include "source2sdk/server/CAI_MotorNavLink.hpp"
 #include "source2sdk/server/CAI_MotorTransition.hpp"
@@ -19,7 +23,7 @@ namespace source2sdk::server
     // Registered alignment: 0x8
     // Alignment: 0x8
     // Standard-layout class: false
-    // Size: 0x348
+    // Size: 0x510
     // Has VTable
     #pragma pack(push, 1)
     class CAI_Motor : public client::CAI_Component
@@ -50,11 +54,16 @@ namespace source2sdk::server
         server::CAI_MotorNavLink m_motorNavLink; // 0xf8        
         server::CAI_MotorTransition m_motorTransition; // 0x170        
         server::CAI_MotorGroundAnimGraph m_motorGroundAnimgraph; // 0x1d0        
-        bool m_bIsExecutingMoveSolve; // 0x340        
-        [[maybe_unused]] std::uint8_t pad_0x341[0x7];
+        bool m_bIsExecutingMoveSolve; // 0x400        
+        [[maybe_unused]] std::uint8_t pad_0x401[0x3]; // 0x401
+        server::CAI_InterestTarget m_pEntityFacingRequests[5]; // 0x404        
+        server::AI_ScheduleFacingTargetPriority_t m_eScheduleFacingRequestPriority; // 0x508        
+        server::AI_Motor_MovementFacingMode_t m_movementFacingModeRequests[4]; // 0x509        
+        server::AI_Motor_DefaultFacing_t m_eDefaultFacing; // 0x50d        
+        [[maybe_unused]] std::uint8_t pad_0x50e[0x2];
     };
     #pragma pack(pop)
     
     // Cannot assert offsets of fields in CAI_Motor because it is not a standard-layout class
-    static_assert(sizeof(CAI_Motor) == 0x348);
+    static_assert(sizeof(CAI_Motor) == 0x510);
 };

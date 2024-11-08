@@ -16,7 +16,7 @@ namespace source2sdk::client
     // Registered alignment: 0x8
     // Alignment: 0x8
     // Standard-layout class: false
-    // Size: 0xed0
+    // Size: 0xee0
     // Has VTable
     // 
     // static metadata: MNetworkVarNames "bool m_bLeaping"
@@ -25,17 +25,17 @@ namespace source2sdk::client
     class CCitadel_Ability_HornetLeap : public client::C_CitadelBaseAbility
     {
     public:
-        [[maybe_unused]] std::uint8_t pad_0xc90[0x2]; // 0xc90
+        [[maybe_unused]] std::uint8_t pad_0xca0[0x2]; // 0xca0
         // metadata: MNetworkEnable
-        bool m_bLeaping; // 0xc92        
-        [[maybe_unused]] std::uint8_t pad_0xc93[0x1]; // 0xc93
+        bool m_bLeaping; // 0xca2        
+        [[maybe_unused]] std::uint8_t pad_0xca3[0x1]; // 0xca3
         // metadata: MNetworkEnable
-        entity2::GameTime_t m_flLeapStartTime; // 0xc94        
-        client::ParticleIndex_t m_nFXIndex; // 0xc98        
-        [[maybe_unused]] std::uint8_t pad_0xc9c[0x234];
+        entity2::GameTime_t m_flLeapStartTime; // 0xca4        
+        client::ParticleIndex_t m_nFXIndex; // 0xca8        
+        [[maybe_unused]] std::uint8_t pad_0xcac[0x234];
     };
     #pragma pack(pop)
     
     // Cannot assert offsets of fields in CCitadel_Ability_HornetLeap because it is not a standard-layout class
-    static_assert(sizeof(CCitadel_Ability_HornetLeap) == 0xed0);
+    static_assert(sizeof(CCitadel_Ability_HornetLeap) == 0xee0);
 };

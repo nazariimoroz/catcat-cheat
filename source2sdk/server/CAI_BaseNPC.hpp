@@ -59,7 +59,7 @@ namespace source2sdk::server
     // Registered alignment: 0x8
     // Alignment: 0x8
     // Standard-layout class: false
-    // Size: 0x12a8
+    // Size: 0x1280
     // Has VTable
     // 
     // static metadata: MNetworkIncludeByName "m_lifeState"
@@ -123,7 +123,6 @@ namespace source2sdk::server
         [[maybe_unused]] std::uint8_t pad_0xc89[0x3]; // 0xc89
         int32_t m_afCapability; // 0xc8c        
         [[maybe_unused]] std::uint8_t pad_0xc90[0x170]; // 0xc90
-        // metadata: MNetworkDisable
         float m_flGroundSpeed; // 0xe00        
         entity2::GameTime_t m_flMoveWaitFinished; // 0xe04        
         // m_hOpeningDoor has a template type with potentially unknown template parameters. You can try uncommenting the field below.
@@ -198,9 +197,9 @@ namespace source2sdk::server
         entity2::CEntityIOOutput m_OnLostPlayerLOS; // 0x1228        
         uint64_t m_nAITraceMask; // 0x1250        
         float m_flThinkTime; // 0x1258        
-        [[maybe_unused]] std::uint8_t pad_0x125c[0x44]; // 0x125c
-        int32_t m_nDebugCurIndex; // 0x12a0        
-        [[maybe_unused]] std::uint8_t pad_0x12a4[0x4];
+        [[maybe_unused]] std::uint8_t pad_0x125c[0x1c]; // 0x125c
+        int32_t m_nDebugCurIndex; // 0x1278        
+        [[maybe_unused]] std::uint8_t pad_0x127c[0x4];
         
         // Static fields:
         static CUtlSymbolLarge &Get_sm_iszPlayerSquad() {return *reinterpret_cast<CUtlSymbolLarge*>(interfaces::g_schema->FindTypeScopeForModule("server.dll")->FindDeclaredClass("CAI_BaseNPC")->GetStaticFields()[0]->m_pInstance);};
@@ -208,12 +207,11 @@ namespace source2sdk::server
         static int32_t &Get_sm_nDebugPauseIndex() {return *reinterpret_cast<int32_t*>(interfaces::g_schema->FindTypeScopeForModule("server.dll")->FindDeclaredClass("CAI_BaseNPC")->GetStaticFields()[2]->m_pInstance);};
         
         // Datamap fields:
-        // int32_t m_nLastHitDestructiblePartIndex; // 0x538
         // CAI_Senses m_pSenses; // 0xbb0
         // void m_pSquad; // 0xf88
+        // void CAI_BaseNPCForceSelectedGoLoopThink; // 0x0
         // void m_vecTaskThinkTimes; // 0x1260
         // CAI_Pathfinder m_pPathfinderNavmesh; // 0xf08
-        // void m_DEPRECATED_DestructiblePartsRuntimeDataByHitGroup; // 0x1278
         // CUtlSymbolLarge InputSetEnemyFilter; // 0x0
         // int32_t InputOverrideHealth; // 0x0
         // int32_t InputSetHealth; // 0x0
@@ -233,5 +231,5 @@ namespace source2sdk::server
     #pragma pack(pop)
     
     // Cannot assert offsets of fields in CAI_BaseNPC because it is not a standard-layout class
-    static_assert(sizeof(CAI_BaseNPC) == 0x12a8);
+    static_assert(sizeof(CAI_BaseNPC) == 0x1280);
 };

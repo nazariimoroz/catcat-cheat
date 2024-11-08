@@ -38,7 +38,8 @@ namespace source2sdk::server
         char m_hMyWearables[0x18]; // 0xae0        
         float m_impactEnergyScale; // 0xaf8        
         bool m_bApplyStressDamage; // 0xafc        
-        [[maybe_unused]] std::uint8_t pad_0xafd[0x43]; // 0xafd
+        bool m_bDeathEventsDispatched; // 0xafd        
+        [[maybe_unused]] std::uint8_t pad_0xafe[0x42]; // 0xafe
         int32_t m_iDamageCount; // 0xb40        
         [[maybe_unused]] std::uint8_t pad_0xb44[0x4]; // 0xb44
         // m_pVecRelationships has a template type with potentially unknown template parameters. You can try uncommenting the field below.
@@ -52,7 +53,7 @@ namespace source2sdk::server
         static int32_t &Get_sm_lastInteraction() {return *reinterpret_cast<int32_t*>(interfaces::g_schema->FindTypeScopeForModule("server.dll")->FindDeclaredClass("CBaseCombatCharacter")->GetStaticFields()[0]->m_pInstance);};
         
         // Datamap fields:
-        // int32_t m_LastHitGroup; // 0x568
+        // int32_t m_LastHitGroup; // 0x548
         // void InputBecomeServerRagdoll; // 0x0
         // CUtlSymbolLarge InputSetRelationship; // 0x0
     };

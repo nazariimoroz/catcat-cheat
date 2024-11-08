@@ -264,10 +264,8 @@ void move_mouse(int d_x, int d_y)
     );
 }
 
-float get_coef(float fov)
+float get_coef(float fov, float global_sense, float aim_sense_mul, bool in_aim)
 {
-    float sens_coef = 2.01f;
-    float aim_sens_coef = 1.f;
     //float fov = 87.61151886f / 45.f; // 43.02112579f // 87.61151886f
     fov /= 45.f; // 43.02112579f // 87.61151886f
 
@@ -276,9 +274,13 @@ float get_coef(float fov)
     // 3: 0.0225849f * 1.964f      = 0.04435674
 
     float final_coef = 0.0226762f
-        * ((0.5085f * aim_sens_coef) + 0.44037767f)
-        * sens_coef
+        * global_sense
         * fov;
+
+    if(in_aim)
+    {
+        final_coef *= ((0.5085f * aim_sense_mul) + 0.44037767f);
+    }
 
     return final_coef;
 }
@@ -352,6 +354,7 @@ int main()
     ex::signature_t CCameraManagerSig("48 8D 3D ? ? ? ? 8B D9", 3, 7);
     ex::signature_t gameEntitySystemSig("48 8B 1D ? ? ? ? 48 89 1D", 3, 7);
     ex::signature_t viewRenderSig("48 89 05 ? ? ? ? 48 8B C8 48 85 C0", 3, 7);
+    ex::signature_t senseSettingsSig("48 8B 05 ? ? ? ? 48 8B 40 08 80 38 00 74 ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? 48 8B B4 24 ? ? ? ?", 3, 7);
 
     std::string process_name = "project8.exe";
     ex::set_global_handle(getProcessHandle(process_name));
@@ -397,6 +400,12 @@ int main()
     std::cout << "CCameraManager:" << std::endl;
     CCameraManagerSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
 
+    std::cout << "Sense settings: " << std::endl;
+    uintptr_t senseSettingsOffsetPtrStat = senseSettingsSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+
+    ex::var<uintptr_t> senseSettingsPtr =
+        reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + senseSettingsOffsetPtrStat;
+
 #pragma endregion CHEAT
 
     gui::CreateHWindow("Deadlock", "Cheat Menu");
@@ -410,6 +419,11 @@ int main()
     {
         if (GetAsyncKeyState(VK_BACK) & 0x8000)
             break;
+
+        ex::var<SenseSetting> sense_settings { *senseSettingsPtr.get(), std::make_tuple(
+            &SenseSetting::global_sense,
+            &SenseSetting::aim_sense_coef
+        )};
 
         ex::var<uintptr_t> ex_entity_list_ptr
             = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
@@ -496,9 +510,14 @@ int main()
                     auto result = closest_player_screen - cursor_pos;
                     result.z = 0;
 
+                    float coef = get_coef(local_player.view_render->fov,
+                        sense_settings->global_sense,
+                        sense_settings->aim_sense_coef,
+                        local_player.view_render->fov < 80.f);
+
                     float fov_per_pixel = local_player.view_render->fov / (float)gui::WIDTH / 2;
-                    result.x = (result.x * fov_per_pixel) / get_coef(local_player.view_render->fov);
-                    result.y = (result.y * fov_per_pixel) / get_coef(local_player.view_render->fov);
+                    result.x = (result.x * fov_per_pixel) / coef;
+                    result.y = (result.y * fov_per_pixel) / coef;
 
                     move_mouse(result.x, result.y);
 

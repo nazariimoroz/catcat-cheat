@@ -21,7 +21,7 @@ namespace source2sdk::server
     // Registered alignment: 0x8
     // Alignment: 0x8
     // Standard-layout class: false
-    // Size: 0x5cc8
+    // Size: 0x64d0
     // Has VTable
     // 
     // static metadata: MNetworkVarNames "CCitadelMinimapComponent::Storage_t m_CCitadelMinimapComponent"
@@ -59,7 +59,7 @@ namespace source2sdk::server
         Vector m_vHomePosition; // 0xc10        
         Vector m_vDropPosition; // 0xc1c        
         entity2::GameTime_t m_tFirstPickupTime; // 0xc28        
-        [[maybe_unused]] std::uint8_t pad_0xc2c[0x509c];
+        [[maybe_unused]] std::uint8_t pad_0xc2c[0x58a4];
         
         // Datamap fields:
         // bool m_bRequireGroundForPickup; // 0xc08
@@ -70,5 +70,5 @@ namespace source2sdk::server
     #pragma pack(pop)
     
     // Cannot assert offsets of fields in CCitadelItemPickup because it is not a standard-layout class
-    static_assert(sizeof(CCitadelItemPickup) == 0x5cc8);
+    static_assert(sizeof(CCitadelItemPickup) == 0x64d0);
 };

@@ -38,7 +38,8 @@ namespace source2sdk::server
         float m_flBarrelBounceVelocity; // 0xbd4        
         float m_flBarrelUpFactor; // 0xbd8        
         bool m_bSpeedOnLand; // 0xbdc        
-        [[maybe_unused]] std::uint8_t pad_0xbdd[0x3];
+        bool m_bHasBouncedPlayerBefore; // 0xbdd        
+        [[maybe_unused]] std::uint8_t pad_0xbde[0x2];
     };
     #pragma pack(pop)
     

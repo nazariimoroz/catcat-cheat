@@ -35,6 +35,7 @@ namespace source2sdk::server
     // static metadata: MNetworkIncludeByName "m_spawnflags"
     // static metadata: MNetworkVarNames "DoorState_t m_eDoorState"
     // static metadata: MNetworkVarNames "bool m_bLocked"
+    // static metadata: MNetworkVarNames "bool m_bNoNPCs"
     // static metadata: MNetworkVarNames "Vector m_closedPosition"
     // static metadata: MNetworkVarNames "QAngle m_closedAngles"
     // static metadata: MNetworkVarNames "CHandle< CBasePropDoor> m_hMaster"
@@ -55,7 +56,9 @@ namespace source2sdk::server
         client::DoorState_t m_eDoorState; // 0xd30        
         // metadata: MNetworkEnable
         bool m_bLocked; // 0xd34        
-        [[maybe_unused]] std::uint8_t pad_0xd35[0x3]; // 0xd35
+        // metadata: MNetworkEnable
+        bool m_bNoNPCs; // 0xd35        
+        [[maybe_unused]] std::uint8_t pad_0xd36[0x2]; // 0xd36
         // metadata: MNetworkEnable
         Vector m_closedPosition; // 0xd38        
         // metadata: MNetworkEnable
@@ -114,6 +117,7 @@ namespace source2sdk::server
         // void InputUnlock; // 0x0
         // void InputPlayerOpen; // 0x0
         // void InputPlayerClose; // 0x0
+        // bool InputSetNoNPCs; // 0x0
         // void CBasePropDoorDoorOpenMoveDone; // 0x0
         // void CBasePropDoorDoorCloseMoveDone; // 0x0
         // void CBasePropDoorDoorAutoCloseThink; // 0x0

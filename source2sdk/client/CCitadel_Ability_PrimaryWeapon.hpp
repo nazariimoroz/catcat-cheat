@@ -17,7 +17,7 @@ namespace source2sdk::client
     // Registered alignment: unknown
     // Alignment: 0x8
     // Standard-layout class: false
-    // Size: 0xd68
+    // Size: 0xd78
     // Has VTable
     // 
     // static metadata: MNetworkVarNames "GameTime_t m_flNextPrimaryAttack"
@@ -51,110 +51,110 @@ namespace source2sdk::client
     public:
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        entity2::GameTime_t m_flNextPrimaryAttack; // 0xc90        
+        entity2::GameTime_t m_flNextPrimaryAttack; // 0xca0        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
         // metadata: MNetworkSerializer "minusone"
         // metadata: MNetworkPriority "32"
-        int32_t m_iClip; // 0xc94        
+        int32_t m_iClip; // 0xca4        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
         // metadata: MNetworkSerializer "minusone"
         // metadata: MNetworkPriority "32"
-        int32_t m_iBonusClip; // 0xc98        
+        int32_t m_iBonusClip; // 0xca8        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        float m_flSpreadPenalty; // 0xc9c        
+        float m_flSpreadPenalty; // 0xcac        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        entity2::GameTime_t m_flZoomTime; // 0xca0        
+        entity2::GameTime_t m_flZoomTime; // 0xcb0        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        entity2::GameTime_t m_flZoomOutTime; // 0xca4        
+        entity2::GameTime_t m_flZoomOutTime; // 0xcb4        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalWeaponExclusive"
-        int8_t m_iSpreadIndex; // 0xca8        
-        [[maybe_unused]] std::uint8_t pad_0xca9[0x1]; // 0xca9
+        int8_t m_iSpreadIndex; // 0xcb8        
+        [[maybe_unused]] std::uint8_t pad_0xcb9[0x1]; // 0xcb9
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalWeaponExclusive"
-        int16_t m_nShotRecoilIndex; // 0xcaa        
+        int16_t m_nShotRecoilIndex; // 0xcba        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalWeaponExclusive"
-        entity2::GameTime_t m_flNextShotRecoilRecoveryTime; // 0xcac        
+        entity2::GameTime_t m_flNextShotRecoilRecoveryTime; // 0xcbc        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        bool m_bIsZoomed; // 0xcb0        
+        bool m_bIsZoomed; // 0xcc0        
         // metadata: MNetworkEnable
-        // metadata: MNetworkUserGroup "LocalPlayerOwnerExclusive"
-        uint8_t m_nBurstShotsRemaining; // 0xcb1        
-        [[maybe_unused]] std::uint8_t pad_0xcb2[0x2]; // 0xcb2
+        // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
+        uint8_t m_nBurstShotsRemaining; // 0xcc1        
+        [[maybe_unused]] std::uint8_t pad_0xcc2[0x2]; // 0xcc2
         // metadata: MNetworkEnable
-        // metadata: MNetworkUserGroup "LocalPlayerOwnerExclusive"
-        uint32_t m_nShotNumber; // 0xcb4        
+        // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
+        uint32_t m_nShotNumber; // 0xcc4        
         // metadata: MNetworkEnable
-        // metadata: MNetworkUserGroup "LocalPlayerOwnerExclusive"
-        bool m_bInReload; // 0xcb8        
+        // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
+        bool m_bInReload; // 0xcc8        
         // metadata: MNetworkEnable
-        // metadata: MNetworkUserGroup "LocalPlayerOwnerExclusive"
-        bool m_bSingleShotReloadFirstBullet; // 0xcb9        
-        [[maybe_unused]] std::uint8_t pad_0xcba[0x2]; // 0xcba
+        // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
+        bool m_bSingleShotReloadFirstBullet; // 0xcc9        
+        [[maybe_unused]] std::uint8_t pad_0xcca[0x2]; // 0xcca
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalWeaponExclusive"
-        entity2::GameTime_t m_reloadQueuedStartTime; // 0xcbc        
-        // metadata: MNetworkEnable
-        // metadata: MNetworkUserGroup "LocalPlayerOwnerExclusive"
-        entity2::GameTime_t m_flReloadAvailableTime; // 0xcc0        
-        // metadata: MNetworkEnable
-        // metadata: MNetworkUserGroup "LocalPlayerOwnerExclusive"
-        bool m_bCanActiveReload; // 0xcc4        
-        [[maybe_unused]] std::uint8_t pad_0xcc5[0x3]; // 0xcc5
+        entity2::GameTime_t m_reloadQueuedStartTime; // 0xccc        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        entity2::GameTime_t m_flLastAttackTime; // 0xcc8        
+        entity2::GameTime_t m_flReloadAvailableTime; // 0xcd0        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        entity2::GameTime_t m_flNextAttackDelayStartTime; // 0xccc        
+        bool m_bCanActiveReload; // 0xcd4        
+        [[maybe_unused]] std::uint8_t pad_0xcd5[0x3]; // 0xcd5
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        entity2::GameTime_t m_flNextAttackDelayEndTime; // 0xcd0        
+        entity2::GameTime_t m_flLastAttackTime; // 0xcd8        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        float m_flAttackDelayPauseTotalTime; // 0xcd4        
+        entity2::GameTime_t m_flNextAttackDelayStartTime; // 0xcdc        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        entity2::GameTime_t m_flAttackDelayPauseEndTime; // 0xcd8        
+        entity2::GameTime_t m_flNextAttackDelayEndTime; // 0xce0        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        client::ENextAttackDelayReason_t m_eNextAttackDelayReason; // 0xcdc        
+        float m_flAttackDelayPauseTotalTime; // 0xce4        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        bool m_bInputPressedWhileSelected; // 0xce0        
-        [[maybe_unused]] std::uint8_t pad_0xce1[0x3]; // 0xce1
+        entity2::GameTime_t m_flAttackDelayPauseEndTime; // 0xce8        
         // metadata: MNetworkEnable
         // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
-        client::EFireMode_t m_eActiveFireMode; // 0xce4        
-        QAngle m_angRecoilAngles; // 0xce8        
-        QAngle m_angRecoilToAdd; // 0xcf4        
-        QAngle m_angRecoilRecovery; // 0xd00        
-        entity2::GameTime_t m_flRecoilStartTime; // 0xd0c        
-        float m_flRecoilRecoverySpeed; // 0xd10        
-        float m_flAddApproachSpeed; // 0xd14        
-        bool m_bFireBackwards; // 0xd18        
-        [[maybe_unused]] std::uint8_t pad_0xd19[0x3]; // 0xd19
-        float m_currentSpread; // 0xd1c        
-        float m_currentMaxSpread; // 0xd20        
-        float m_currentFireSpread; // 0xd24        
-        float m_flCurrentSpinRate; // 0xd28        
-        [[maybe_unused]] std::uint8_t pad_0xd2c[0x4]; // 0xd2c
-        float m_fFireDuration; // 0xd30        
-        [[maybe_unused]] std::uint8_t pad_0xd34[0x1]; // 0xd34
-        bool m_bFireOnEmpty; // 0xd35        
-        [[maybe_unused]] std::uint8_t pad_0xd36[0x2]; // 0xd36
-        entity2::GameTime_t m_flNextDisarmSound; // 0xd38        
-        [[maybe_unused]] std::uint8_t pad_0xd3c[0x2c];
+        client::ENextAttackDelayReason_t m_eNextAttackDelayReason; // 0xcec        
+        // metadata: MNetworkEnable
+        // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
+        bool m_bInputPressedWhileSelected; // 0xcf0        
+        [[maybe_unused]] std::uint8_t pad_0xcf1[0x3]; // 0xcf1
+        // metadata: MNetworkEnable
+        // metadata: MNetworkUserGroup "LocalPlayerOwnerAndObserversExclusive"
+        client::EFireMode_t m_eActiveFireMode; // 0xcf4        
+        QAngle m_angRecoilAngles; // 0xcf8        
+        QAngle m_angRecoilToAdd; // 0xd04        
+        QAngle m_angRecoilRecovery; // 0xd10        
+        entity2::GameTime_t m_flRecoilStartTime; // 0xd1c        
+        float m_flRecoilRecoverySpeed; // 0xd20        
+        float m_flAddApproachSpeed; // 0xd24        
+        bool m_bFireBackwards; // 0xd28        
+        [[maybe_unused]] std::uint8_t pad_0xd29[0x3]; // 0xd29
+        float m_currentSpread; // 0xd2c        
+        float m_currentMaxSpread; // 0xd30        
+        float m_currentFireSpread; // 0xd34        
+        float m_flCurrentSpinRate; // 0xd38        
+        [[maybe_unused]] std::uint8_t pad_0xd3c[0x4]; // 0xd3c
+        float m_fFireDuration; // 0xd40        
+        [[maybe_unused]] std::uint8_t pad_0xd44[0x1]; // 0xd44
+        bool m_bFireOnEmpty; // 0xd45        
+        [[maybe_unused]] std::uint8_t pad_0xd46[0x2]; // 0xd46
+        entity2::GameTime_t m_flNextDisarmSound; // 0xd48        
+        [[maybe_unused]] std::uint8_t pad_0xd4c[0x2c];
     };
     #pragma pack(pop)
     
     // Cannot assert offsets of fields in CCitadel_Ability_PrimaryWeapon because it is not a standard-layout class
-    static_assert(sizeof(CCitadel_Ability_PrimaryWeapon) == 0xd68);
+    static_assert(sizeof(CCitadel_Ability_PrimaryWeapon) == 0xd78);
 };
