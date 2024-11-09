@@ -153,6 +153,9 @@ void gui::CreateHWindow(const char* draw_on_windows, const char* windowName) noe
     SetWindowPos(window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     ShowWindow(window, SW_SHOWDEFAULT);
     UpdateWindow(window);
+
+    SetForegroundWindow(gui::dow_hwnd);
+    SetActiveWindow(gui::dow_hwnd);
 }
 
 void gui::DestroyHWindow() noexcept
