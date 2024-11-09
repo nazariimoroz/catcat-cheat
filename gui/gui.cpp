@@ -135,7 +135,6 @@ void gui::CreateHWindow(const char* draw_on_windows, const char* windowName) noe
     Y = rect.top;
     WIDTH = rect.right - rect.left;
     HEIGHT = rect.bottom - rect.top;
-    std::cout << X << " " << Y << " " << WIDTH << " " << HEIGHT << std::endl;
     window = CreateWindowEx(
         WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT ,
         "class001",
@@ -412,12 +411,9 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
         // esp box
         {
             float width = std::abs(head_pos.y - bottom_pos.y) * 0.7;
-            float height_add = std::abs(head_pos.y - bottom_pos.y) * 0.1;
 
-            ImVec2 p_min = ImVec2{bottom_pos.x + width / 2.f,
-                head_pos.y + bottom_pos.z * 0.005f - height_add};
-            ImVec2 p_max = ImVec2{bottom_pos.x - width / 2.f,
-                bottom_pos.y + bottom_pos.z * 0.005f + height_add};
+            ImVec2 p_min = ImVec2{bottom_pos.x + width / 2.f, head_pos.y - (bottom_pos.y - head_pos.y) * 0.1f };
+            ImVec2 p_max = ImVec2{bottom_pos.x - width / 2.f, bottom_pos.y};
 
             ImGui::GetWindowDrawList()->AddRect(
                 p_min,

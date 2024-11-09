@@ -285,6 +285,12 @@ float get_coef(float fov, float global_sense, float aim_sense_mul, bool in_aim)
     return final_coef;
 }
 
+bool in_game(uintptr_t local_player_ptr_address)
+{
+    ex::var<uintptr_t> local_player_address = local_player_ptr_address;
+    return *local_player_address.get();
+}
+
 int main()
 {
     // GLOBAL FINAL COEF: 0.0442
@@ -419,6 +425,12 @@ int main()
     {
         if (GetAsyncKeyState(VK_BACK) & 0x8000)
             break;
+
+        if(!in_game(localPlayerOffset + reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll)))
+        {
+            std::cout << "In Menu" << std::endl;
+            continue;
+        }
 
         ex::var<SenseSetting> sense_settings { *senseSettingsPtr.get(), std::make_tuple(
             &SenseSetting::global_sense,
