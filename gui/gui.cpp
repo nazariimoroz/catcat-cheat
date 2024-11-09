@@ -137,7 +137,7 @@ void gui::CreateHWindow(const char* draw_on_windows, const char* windowName) noe
     HEIGHT = rect.bottom - rect.top;
     std::cout << X << " " << Y << " " << WIDTH << " " << HEIGHT << std::endl;
     window = CreateWindowEx(
-        WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TOOLWINDOW, //WS_EX_TRANSPARENT ,
+        WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT ,
         "class001",
         windowName,
         WS_POPUP,
