@@ -136,7 +136,7 @@ void gui::CreateHWindow(const char* draw_on_windows, const char* windowName) noe
     WIDTH = rect.right - rect.left;
     HEIGHT = rect.bottom - rect.top;
     window = CreateWindowEx(
-        WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT ,
+        WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT,
         "class001",
         windowName,
         WS_POPUP,
@@ -248,6 +248,24 @@ void draw_menu()
         if (!insert_key_pressed) {
             show_menu = !show_menu;
             insert_key_pressed = true;
+
+            if(show_menu)
+            {
+                SetWindowLong(gui::window, GWL_EXSTYLE,
+                    WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT);
+
+                SetForegroundWindow(gui::window);
+                SetActiveWindow(gui::window);
+            } else
+            {
+                SetWindowLong(gui::window, GWL_EXSTYLE,
+                              WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED);
+
+                SetLayeredWindowAttributes(gui::window, RGB(255, 255, 255), 0, LWA_COLORKEY);
+
+                SetForegroundWindow(gui::dow_hwnd);
+                SetActiveWindow(gui::dow_hwnd);
+            }
         }
     }
     else {
@@ -257,19 +275,14 @@ void draw_menu()
     if (show_menu) {
         ImGui::SetNextWindowPos({0, 0});
         ImGui::SetNextWindowSize({static_cast<float>(gui::WIDTH), static_cast<float>(gui::HEIGHT)});
-        ImGui::Begin("Deadlock Cheat");
+        ImGui::Begin("DD");
 
         if (ImGui::BeginTabBar("##tabs")) {
-            if (ImGui::BeginTabItem("Render")) {
+            if (ImGui::BeginTabItem("Visual")) {
+
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Aimbot")) {
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Movement")) {
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Extra")) {
+            if (ImGui::BeginTabItem("Aim")) {
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Config")) {
