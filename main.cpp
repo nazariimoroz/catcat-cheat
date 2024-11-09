@@ -103,9 +103,15 @@ std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_
     std::vector<player_t> players;
     ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 0x10;
 
+    if(global_t::list_size == 0)
+    {
+        ex::var<uint32_t> ex_list_size = entity_list_sys_ptr + 0x1534;
+        global_t::list_size = *ex_list_size;
+    }
+
     size_t index_of_local_player = 0;
 
-    for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < global_t::list_size; ++i)
     {
         player_t player{};
         ex::var<uintptr_t> ex_controller_ptr
@@ -429,6 +435,7 @@ int main()
         if(!in_game(localPlayerOffset + reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll)))
         {
             std::cout << "In Menu" << std::endl;
+            global_t::list_size = 0;
             continue;
         }
 
