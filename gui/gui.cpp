@@ -288,8 +288,17 @@ void draw_menu()
 
         if (ImGui::BeginTabBar("##tabs"))
         {
-            if (ImGui::BeginTabItem("Visual"))
+            if (ImGui::BeginTabItem("Esp"))
             {
+                if (ImGui::Checkbox("Esp", &settings_t::esp))
+                    settings_t::save_settings();
+
+                if(ImGui::InputFloat("Max distance", &settings_t::esp_max_distance))
+                    settings_t::save_settings();
+
+                if (ImGui::Checkbox("With Health", &settings_t::esp_with_health))
+                    settings_t::save_settings();
+
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Aim"))
@@ -301,6 +310,12 @@ void draw_menu()
                                  (int32_t*)&settings_t::aim_scope,
                                  scope_t_str,
                                  IM_ARRAYSIZE(scope_t_str)))
+                    settings_t::save_settings();
+
+                if(ImGui::InputFloat("Max distance", &settings_t::aim_max_distance))
+                    settings_t::save_settings();
+
+                if(ImGui::InputFloat("Lost distance", &settings_t::aim_lost_distance))
                     settings_t::save_settings();
 
                 ImGui::EndTabItem();
@@ -411,7 +426,7 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
 {
     draw_menu();
 
-    if (show_menu)
+    if (show_menu || !settings_t::esp)
         return;
 
     ImGui::SetNextWindowPos({0, 0});
@@ -429,18 +444,14 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
 
     for (auto& i : players_list)
     {
-        struct GG
-        {
-            float x;
-            float y;
-            float z;
-        };
-
         if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
             continue;
 
         auto [bottom_pos, bottom_pos_is_ok] = gui::world_to_screen(i.world_pos, local_player.matrix.get());
         auto [head_pos, head_pos_is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
+
+        if (bottom_pos.z > settings_t::esp_max_distance)
+            continue;
 
         if (!bottom_pos_is_ok || !head_pos_is_ok)
             continue;
@@ -461,7 +472,7 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
                 1.f);
 
             // esp box hp
-            {
+            if(settings_t::esp_with_health){
                 ImGui::GetWindowDrawList()->AddLine(
                     ImVec2{
                         p_max.x, p_max.y -

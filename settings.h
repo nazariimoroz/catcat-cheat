@@ -10,7 +10,7 @@ enum class scope_t
     noscope_only
 };
 
-inline const char* scope_t_str[] {
+inline const char* scope_t_str[]{
     "scope_and_noscope",
     "scope_only",
     "noscope_only"
@@ -29,7 +29,7 @@ public:
     static float get_value(std::wstring_view settings_name, std::wstring_view key_name, float value);
     static void save_value(std::wstring_view settings_name, std::wstring_view key_name, float value);
 
-    #pragma region Aim
+#pragma region Aim
     inline static bool aim = true;
     inline static scope_t aim_scope = scope_t::scope_only;
 
@@ -38,7 +38,14 @@ public:
     // if distance to enemy1 >= aim_lost_distance, and there are other enemy in range
     // cheat will pick closest enemy
     inline static float aim_lost_distance = 2000.f;
-    #pragma endregion Aim
+#pragma endregion Aim
+
+#pragma region Esp
+    inline static bool esp = true;
+    inline static float esp_max_distance = 10000.f;
+
+    inline static bool esp_with_health = true;
+#pragma endregion Esp
 };
 
 #endif //SETTINGS_H

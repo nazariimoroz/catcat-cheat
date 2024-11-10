@@ -27,6 +27,12 @@ void settings_t::load_settings()
     SETT(aim_max_distance);
     SETT(aim_lost_distance);
 #undef SETT
+
+#define SETT(val) val = get_value(L"ESP", L ## #val, val)
+    SETT(esp);
+    SETT(esp_max_distance);
+    SETT(esp_with_health);
+#undef SETT
 }
 
 void settings_t::save_settings()
@@ -36,6 +42,12 @@ void settings_t::save_settings()
     save_value(L"AIM", L"aim_scope", static_cast<int>(aim_scope));
     SETT(aim_max_distance);
     SETT(aim_lost_distance);
+#undef SETT
+
+#define SETT(val) save_value(L"ESP", L ## #val, val)
+    SETT(esp);
+    SETT(esp_max_distance);
+    SETT(esp_with_health);
 #undef SETT
 }
 
@@ -54,7 +66,7 @@ float settings_t::get_value(std::wstring_view settings_name, std::wstring_view k
     {
         save_value(settings_name, key_name, value);
         std::cerr << "settings_t::get_value(): GetPrivateProfileStringW failed!" << std::endl;
-        return 0.f;
+        return value;
     }
 
     return static_cast<float>(_wtof(buff));
