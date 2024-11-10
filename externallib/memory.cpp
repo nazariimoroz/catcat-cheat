@@ -5,6 +5,7 @@ bool ex::read_memory_into_array(char* buffer, HANDLE processHandle, uintptr_t ad
 {
     if(!ReadProcessMemory(processHandle, reinterpret_cast<LPCVOID>(address), buffer, size, nullptr))
     {
+        /*
         auto errorMessageID = ::GetLastError();
 
         LPSTR messageBuffer = nullptr;
@@ -15,7 +16,7 @@ bool ex::read_memory_into_array(char* buffer, HANDLE processHandle, uintptr_t ad
 
         EX_LOG("read_memory_into_array(ERROR): {}", messageBuffer);
 
-        LocalFree(messageBuffer);
+        LocalFree(messageBuffer);*/
 
         return false;
     }

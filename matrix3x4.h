@@ -41,6 +41,11 @@ struct xyz_t
     {
         return {x, y, z};
     }
+
+    xyz_t xy0() const
+    {
+        return {x, y, 0};
+    }
 };
 
 namespace Urho3D

@@ -11,6 +11,8 @@
 #include "matrix3x4.h"
 #include "source2sdk/client/CCitadelPlayerController.hpp"
 #include "source2sdk/client/C_CitadelPlayerPawn.hpp"
+#include "source2sdk/client/CGameSceneNode.hpp"
+#include "source2sdk/client/CItemXP.hpp"
 
 struct ViewRender
 {
@@ -101,5 +103,13 @@ inline std::string c_heroname_to_realname(const char* hero_name)
     std::ranges::transform(hn, hn.begin(), toupper);
     return hn;
 }
+
+struct orb_t
+{
+    ex::var<source2sdk::client::CItemXP> ex_orb;
+
+    xyz_t position;
+    bool visible;
+};
 
 #endif //TYPE_H

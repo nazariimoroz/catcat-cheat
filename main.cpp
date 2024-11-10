@@ -16,6 +16,7 @@
 
 #include <gui/gui.h>
 
+#include "dl_memory.h"
 #include "global_t.h"
 #include "matrix3x4.h"
 #include "settings.h"
@@ -95,160 +96,6 @@ MODULEINFO getModuleInfo(HANDLE processHandle, const std::string& moduleName)
     return modInfo;
 }
 
-/**
- * player_list, index of local_player
- */
-std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_sys_ptr)
-{
-    std::vector<player_t> players;
-    ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 0x10;
-
-    if (global_t::list_size == 0)
-    {
-        ex::var<uint32_t> ex_list_size = entity_list_sys_ptr + 0x1534;
-        global_t::list_size = *ex_list_size;
-    }
-
-    size_t index_of_local_player = 0;
-
-    for (int i = 0; i < global_t::list_size; ++i)
-    {
-        player_t player{};
-        ex::var<uintptr_t> ex_controller_ptr
-            = (*ex_entity_list_ptr) + 0x78 * (i & 0x1FF);
-
-        if (*ex_controller_ptr == 0)
-            continue;
-
-        ex::var<source2sdk::client::CCitadelPlayerController> ex_controller{
-            *ex_controller_ptr,
-            std::make_tuple(
-                &source2sdk::client::CCitadelPlayerController::m_iTeamNum,
-                &source2sdk::client::CCitadelPlayerController::m_pEntity,
-                &source2sdk::client::CCitadelPlayerController::m_hPawn,
-                &source2sdk::client::CCitadelPlayerController::m_bIsLocalPlayerController
-            )
-        };
-
-        if (!ex_controller->m_pEntity)
-            continue;
-
-        ex::var ex_entity = ex_controller->m_pEntity;
-        const auto designer_name_ptr = *(uintptr_t*)ex_entity->m_designerName;
-        if (!designer_name_ptr)
-            continue;
-
-        ex::var<ex::str_t> designer_name = designer_name_ptr;
-        if (strcmp(designer_name->str(), "citadel_player_controller") != 0)
-            continue;
-
-        player.ex_controller = std::move(ex_controller);
-
-        int32_t pawn_index = *(int32_t*)player.ex_controller->m_hPawn;
-        uintptr_t pawns_entity_list_sys_ptr
-            = entity_list_sys_ptr + (0x8 * ((pawn_index & 0x7FFF) >> 0x9) + 0x10);
-        ex::var<uintptr_t> ex_pawns_entity_list_ptr = pawns_entity_list_sys_ptr;
-
-        if (*ex_pawns_entity_list_ptr == 0)
-            continue;
-
-        uintptr_t pawn_ptr_ptr = (*ex_pawns_entity_list_ptr) + 0x78 * (pawn_index & 0x1FF);
-        if (pawn_ptr_ptr == 0)
-            continue;
-
-        ex::var<uintptr_t> ex_pawn_ptr = pawn_ptr_ptr;
-        if (*ex_pawn_ptr == 0)
-            continue;
-
-        player.ex_pawn = ex::var<source2sdk::client::C_CitadelPlayerPawn>{
-            *ex_pawn_ptr,
-            std::make_tuple(
-                &source2sdk::client::C_CitadelPlayerPawn::m_CBodyComponent,
-                &source2sdk::client::C_CitadelPlayerPawn::m_pEntity,
-                &source2sdk::client::C_CitadelPlayerPawn::m_iHealth,
-                &source2sdk::client::C_CitadelPlayerPawn::m_iMaxHealth,
-                &source2sdk::client::C_CitadelPlayerPawn::m_flMouseSensitivity,
-                &source2sdk::client::C_CitadelPlayerPawn::m_pGameSceneNode,
-                &source2sdk::client::C_CitadelPlayerPawn::m_lifeState
-            )
-        };
-
-        // getting hero name
-        {
-            if (player.ex_pawn->m_pEntity == nullptr)
-                continue;
-            ex::var pawn_entity{
-                player.ex_pawn->m_pEntity, std::make_tuple(
-                    &source2sdk::entity2::CEntityIdentity::m_name)
-            };
-
-            ex::var<ex::str_t> pawn_name = EX_BYTES_TO_PTR(pawn_entity->m_name);
-            player.hero_name = c_heroname_to_realname(pawn_name->str()).c_str();
-        }
-
-        // getting current position
-        {
-            if (player.ex_pawn->m_CBodyComponent == nullptr)
-                continue;
-            ex::var bc{
-                player.ex_pawn->m_CBodyComponent, std::make_tuple(
-                    &source2sdk::client::CBodyComponent::m_pSceneNode
-                )
-            };
-
-            if (bc->m_pSceneNode == nullptr)
-                continue;
-            ex::var scene_node{
-                bc->m_pSceneNode, std::make_tuple(
-                    &source2sdk::client::CGameSceneNode::m_nodeToWorld
-                )
-            };
-
-            player.world_pos.x = *((float*)scene_node->m_nodeToWorld);
-            player.world_pos.y = *((float*)scene_node->m_nodeToWorld + 1);
-            player.world_pos.z = *((float*)scene_node->m_nodeToWorld + 2);
-        }
-
-        // getting head bone
-        do
-        {
-            const auto bi_iter = realname_to_head_bone_map.find(player.hero_name);
-            if (bi_iter == realname_to_head_bone_map.end())
-            {
-                player.head_pos = player.world_pos;
-                player.head_pos.z += 92.f;
-                break;
-            }
-            const auto bi_ex_index = bi_iter->second;
-
-            ex::var<source2sdk::client::CSkeletonInstance> ex_gsn{
-                (uintptr_t)player.ex_pawn->m_pGameSceneNode,
-                std::make_tuple(
-                    &source2sdk::client::CSkeletonInstance::m_modelState
-                )
-            };
-
-            uintptr_t bone_array_address = ex_gsn->m_modelState.m_bone_array;
-
-            uintptr_t bone_address = bone_array_address
-                + sizeof(bone_t) * bi_ex_index;
-
-            ex::var<bone_t> ex_bone{bone_address};
-            player.head_pos = ex_bone.get()->position;
-        }
-        while (false);
-
-        if (player.ex_controller->m_bIsLocalPlayerController)
-        {
-            index_of_local_player = players.size();
-        }
-
-        players.push_back(std::move(player));
-    }
-
-    return {players, index_of_local_player};
-}
-
 void move_mouse(int d_x, int d_y)
 {
     /*
@@ -297,29 +144,34 @@ bool in_game(uintptr_t local_player_ptr_address)
     return *local_player_address.get();
 }
 
-void aim(std::vector<player_t>& players_list, ex::var<SenseSetting>& sense_settings, player_t& local_player)
+void aim(std::vector<player_t>& players_list,
+    ex::var<SenseSetting>& sense_settings,
+    player_t& local_player,
+    std::vector<orb_t>& orbs_list)
 {
     bool aim_worked = false;
-    if (
-        (settings_t::aim_scope == scope_t::scope_only && local_player.view_render->fov < 80.f) ||
-        (settings_t::aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
-        settings_t::aim_scope == scope_t::scope_and_noscope)
+
+    if (!(GetAsyncKeyState(VK_LBUTTON) & 0x8000))
     {
-        if (!(GetAsyncKeyState(VK_LBUTTON) & 0x8000))
-        {
-            goto AIM_EXIT;
-        }
+        goto AIM_EXIT;
+    }
+
+    if ( settings_t::aim &&
+        ((settings_t::aim_scope == scope_t::scope_only && local_player.view_render->fov < 80.f) ||
+        (settings_t::aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
+        settings_t::aim_scope == scope_t::scope_and_noscope))
+    {
         player_t* closest_player = nullptr;
         xyz_t closest_player_screen = {0, 0, INFINITY};
         for (auto& i : players_list)
         {
-            if (i.player_t::ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
+            if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
                 continue;
 
-            if (i.player_t::ex_pawn->m_lifeState != 0)
+            if (i.ex_pawn->m_lifeState != 0)
                 continue;
 
-            auto [xyw, is_ok] = gui::world_to_screen(i.player_t::head_pos, local_player.matrix.get());
+            auto [xyw, is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
             if (!is_ok)
                 continue;
 
@@ -328,7 +180,7 @@ void aim(std::vector<player_t>& players_list, ex::var<SenseSetting>& sense_setti
 
             if (!global_t::aim_locked_on_hero.empty() && xyw.z <= settings_t::aim_lost_distance)
             {
-                if (i.player_t::hero_name == global_t::aim_locked_on_hero)
+                if (i.hero_name == global_t::aim_locked_on_hero)
                 {
                     closest_player = &i;
                     closest_player_screen = xyw;
@@ -370,6 +222,62 @@ void aim(std::vector<player_t>& players_list, ex::var<SenseSetting>& sense_setti
         }
     }
 
+    if(aim_worked)
+        goto AIM_EXIT;
+
+    if ( settings_t::orb_aim &&
+        ((settings_t::orb_aim_scope == scope_t::scope_only && local_player.view_render->fov < 80.f) ||
+        (settings_t::orb_aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
+        settings_t::orb_aim_scope == scope_t::scope_and_noscope))
+    {
+        orb_t* closest_orb = nullptr;
+        xyz_t closest_orb_screen = {0, 0, INFINITY};
+        float min_len = INFINITY;
+        for (auto& i : orbs_list)
+        {
+            if(i.visible)
+                continue;
+
+            auto [xyw, is_ok] = gui::world_to_screen(i.position, local_player.matrix.get());
+            if (!is_ok)
+                continue;
+
+            if (xyw.z >= settings_t::orb_aim_max_distance)
+                continue;
+
+            xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
+            auto new_len = glm::length(static_cast<glm::vec3>(xyw.xy0() - cursor_pos));
+
+            if (min_len > new_len)
+            {
+                min_len = new_len;
+                closest_orb_screen = xyw;
+                closest_orb = &i;
+            }
+        }
+
+        if (closest_orb)
+        {
+            xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
+
+            auto result = closest_orb_screen - cursor_pos;
+            result.z = 0;
+
+            float coef = get_coef(local_player.view_render->fov,
+                                  sense_settings->global_sense,
+                                  sense_settings->aim_sense_coef,
+                                  local_player.view_render->fov < 80.f);
+
+            float fov_per_pixel = local_player.view_render->fov / (float)gui::WIDTH / 2;
+            result.x = (result.x * fov_per_pixel) / coef;
+            result.y = (result.y * fov_per_pixel) / coef;
+
+            move_mouse(result.x, result.y);
+
+            aim_worked = true;
+        }
+    }
+
     AIM_EXIT: {}
     if (!aim_worked)
     {
@@ -379,6 +287,8 @@ void aim(std::vector<player_t>& players_list, ex::var<SenseSetting>& sense_setti
 
 int main()
 {
+    // aim coef testing
+#if 0
     // GLOBAL FINAL COEF: 0.0442
 
     /* NO AIM
@@ -397,7 +307,6 @@ int main()
 
     // final_coef1: 0.0225849f
 
-#if 0
     do
     {
         //std::cin >> final_coef;
@@ -437,9 +346,7 @@ int main()
     return 1;
 #endif
 
-#pragma region CHEAT
-    std::cerr << "By 5komar (Catrine)\n" << std::endl;
-
+#pragma region GET_ALL_SIGS
     ex::signature_t localPlayerSig("48 8B 0D ? ? ? ? 48 85 C9 74 65 83 FF FF", 3, 7);
     ex::signature_t viewMatrixSig("48 8D ? ? ? ? ? 48 C1 E0 06 48 03 C1 C3", 3, 7);
     ex::signature_t entityListSig("48 8B 0D ? ? ? ? 8B C5 48 C1 E8", 3, 7);
@@ -532,7 +439,9 @@ int main()
 
         ex::var<uintptr_t> ex_entity_list_ptr
             = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
-        auto [players_list, local_player_i] = get_all_players(*ex_entity_list_ptr);
+
+        auto [players_list, local_player_i,
+            orbs_list] = dl_memory_t::get_all_entities(*ex_entity_list_ptr);
         auto& local_player = players_list[local_player_i];
 
         // initing local_player
@@ -558,7 +467,7 @@ int main()
 
         if(!gui::show_menu && settings_t::aim)
         {
-            aim(players_list, sense_settings, local_player);
+            aim(players_list, sense_settings, local_player, orbs_list);
         }
     }
 
