@@ -26,6 +26,10 @@ void settings_t::load_settings()
     aim_scope = static_cast<scope_t>(get_value(L"AIM", L"aim_scope", static_cast<float>(aim_scope)));
     SETT(aim_max_distance);
     SETT(aim_lost_distance);
+
+    SETT(orb_aim);
+    orb_aim_scope = static_cast<scope_t>(get_value(L"AIM", L"orb_aim_scope", static_cast<float>(orb_aim_scope)));
+    SETT(orb_aim_max_distance);
 #undef SETT
 
 #define SETT(val) val = get_value(L"ESP", L ## #val, val)
@@ -42,6 +46,10 @@ void settings_t::save_settings()
     save_value(L"AIM", L"aim_scope", static_cast<int>(aim_scope));
     SETT(aim_max_distance);
     SETT(aim_lost_distance);
+
+    SETT(orb_aim);
+    save_value(L"AIM", L"orb_aim_scope", static_cast<int>(orb_aim_scope));
+    SETT(orb_aim_max_distance);
 #undef SETT
 
 #define SETT(val) save_value(L"ESP", L ## #val, val)

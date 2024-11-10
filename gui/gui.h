@@ -42,6 +42,8 @@ namespace gui
 	inline LPDIRECT3DDEVICE9 device = nullptr;
 	inline D3DPRESENT_PARAMETERS presentParameters = { };
 
+	bool is_dd_activated();
+
 	// handle window creation & destruction
 	void CreateHWindow(const char* draw_on_windows, const char* windowName) noexcept;
 	void DestroyHWindow() noexcept;

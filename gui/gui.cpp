@@ -108,6 +108,11 @@ LRESULT CALLBACK WindowProcess(
     return DefWindowProc(window, message, wideParameter, longParameter);
 }
 
+bool gui::is_dd_activated()
+{
+    return GetForegroundWindow() == dow_hwnd;
+}
+
 void gui::CreateHWindow(const char* draw_on_windows, const char* windowName) noexcept
 {
     dow_hwnd = FindWindowA(NULL, draw_on_windows);
@@ -284,7 +289,7 @@ void draw_menu()
     {
         ImGui::SetNextWindowPos({0, 0});
         ImGui::SetNextWindowSize({static_cast<float>(gui::WIDTH), static_cast<float>(gui::HEIGHT)});
-        ImGui::Begin("DD");
+        ImGui::Begin("DD", nullptr, ImGuiWindowFlags_NoTitleBar);
 
         if (ImGui::BeginTabBar("##tabs"))
         {
@@ -303,20 +308,36 @@ void draw_menu()
             }
             if (ImGui::BeginTabItem("Aim"))
             {
-                if (ImGui::Checkbox("Aim", &settings_t::aim))
-                    settings_t::save_settings();
+                {
+                    if (ImGui::Checkbox("Aim", &settings_t::aim))
+                        settings_t::save_settings();
 
-                if (ImGui::Combo("Scope",
-                                 (int32_t*)&settings_t::aim_scope,
-                                 scope_t_str,
-                                 IM_ARRAYSIZE(scope_t_str)))
-                    settings_t::save_settings();
+                    if (ImGui::Combo("Scope",
+                                     (int32_t*)&settings_t::aim_scope,
+                                     scope_t_str,
+                                     IM_ARRAYSIZE(scope_t_str)))
+                        settings_t::save_settings();
 
-                if(ImGui::InputFloat("Max distance", &settings_t::aim_max_distance))
-                    settings_t::save_settings();
+                    if(ImGui::InputFloat("Max distance", &settings_t::aim_max_distance))
+                        settings_t::save_settings();
 
-                if(ImGui::InputFloat("Lost distance", &settings_t::aim_lost_distance))
-                    settings_t::save_settings();
+                    if(ImGui::InputFloat("Lost distance", &settings_t::aim_lost_distance))
+                        settings_t::save_settings();
+                }
+
+                {
+                    if (ImGui::Checkbox("Orb aim", &settings_t::orb_aim))
+                        settings_t::save_settings();
+
+                    if (ImGui::Combo("Orb scope",
+                                     (int32_t*)&settings_t::orb_aim_scope,
+                                     scope_t_str,
+                                     IM_ARRAYSIZE(scope_t_str)))
+                        settings_t::save_settings();
+
+                    if(ImGui::InputFloat("Orb max distance", &settings_t::orb_aim_max_distance))
+                        settings_t::save_settings();
+                }
 
                 ImGui::EndTabItem();
             }
@@ -426,7 +447,7 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
 {
     draw_menu();
 
-    if (show_menu || !settings_t::esp)
+    if (show_menu || !settings_t::esp || !gui::is_dd_activated())
         return;
 
     ImGui::SetNextWindowPos({0, 0});

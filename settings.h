@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 
-enum class scope_t
+enum class scope_t : int32_t
 {
     scope_and_noscope,
     scope_only,

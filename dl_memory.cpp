@@ -153,7 +153,6 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
                 )
             };
 
-
             if(!ex_orb_entity->m_pGameSceneNode)
                 continue;
 

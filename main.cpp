@@ -410,7 +410,7 @@ int main()
 
 #pragma endregion CHEAT
 
-    gui::CreateHWindow("Deadlock", "Cheat Menu");
+    gui::CreateHWindow("Deadlock", "DDMenu");
     if (!gui::CreateDevice())
     {
         return 1;
@@ -465,7 +465,7 @@ int main()
         gui::Render(players_list, local_player);
         gui::EndRender();
 
-        if(!gui::show_menu && settings_t::aim)
+        if(!gui::show_menu && gui::is_dd_activated())
         {
             aim(players_list, sense_settings, local_player, orbs_list);
         }
