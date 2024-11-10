@@ -12,6 +12,7 @@
 #include <glm/glm.hpp>
 
 #include "matrix3x4.h"
+#include "settings.h"
 #include "source2sdk/client/CBodyComponent.hpp"
 #include "source2sdk/client/CGameSceneNode.hpp"
 #include "source2sdk/client/CPlayer_CameraServices.hpp"
@@ -245,21 +246,24 @@ void gui::DestroyImGui() noexcept
 
 void draw_menu()
 {
+    using namespace gui;
     static bool insert_key_pressed = false;
-    static bool show_menu = false;
-    if (GetAsyncKeyState(VK_INSERT) & 0x1) {
-        if (!insert_key_pressed) {
+    if (GetAsyncKeyState(VK_INSERT) & 0x1)
+    {
+        if (!insert_key_pressed)
+        {
             show_menu = !show_menu;
             insert_key_pressed = true;
 
-            if(show_menu)
+            if (show_menu)
             {
                 SetWindowLong(gui::window, GWL_EXSTYLE,
-                    WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT);
+                              WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT);
 
                 SetForegroundWindow(gui::window);
                 SetActiveWindow(gui::window);
-            } else
+            }
+            else
             {
                 SetWindowLong(gui::window, GWL_EXSTYLE,
                               WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED);
@@ -271,24 +275,38 @@ void draw_menu()
             }
         }
     }
-    else {
+    else
+    {
         insert_key_pressed = false;
     }
 
-    if (show_menu) {
+    if (show_menu)
+    {
         ImGui::SetNextWindowPos({0, 0});
         ImGui::SetNextWindowSize({static_cast<float>(gui::WIDTH), static_cast<float>(gui::HEIGHT)});
         ImGui::Begin("DD");
 
-        if (ImGui::BeginTabBar("##tabs")) {
-            if (ImGui::BeginTabItem("Visual")) {
+        if (ImGui::BeginTabBar("##tabs"))
+        {
+            if (ImGui::BeginTabItem("Visual"))
+            {
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Aim"))
+            {
+                if (ImGui::Checkbox("Aim", &settings_t::aim))
+                    settings_t::save_settings();
+
+                if (ImGui::Combo("Scope",
+                                 (int32_t*)&settings_t::aim_scope,
+                                 scope_t_str,
+                                 IM_ARRAYSIZE(scope_t_str)))
+                    settings_t::save_settings();
 
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Aim")) {
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Config")) {
+            if (ImGui::BeginTabItem("Config"))
+            {
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
@@ -393,6 +411,9 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
 {
     draw_menu();
 
+    if (show_menu)
+        return;
+
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize({static_cast<float>(WIDTH), static_cast<float>(HEIGHT)});
     ImGui::Begin(
@@ -428,7 +449,7 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
         {
             float width = std::abs(head_pos.y - bottom_pos.y) * 0.7;
 
-            ImVec2 p_min = ImVec2{bottom_pos.x + width / 2.f, head_pos.y - (bottom_pos.y - head_pos.y) * 0.1f };
+            ImVec2 p_min = ImVec2{bottom_pos.x + width / 2.f, head_pos.y - (bottom_pos.y - head_pos.y) * 0.1f};
             ImVec2 p_max = ImVec2{bottom_pos.x - width / 2.f, bottom_pos.y};
 
             ImGui::GetWindowDrawList()->AddRect(
@@ -442,9 +463,11 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
             // esp box hp
             {
                 ImGui::GetWindowDrawList()->AddLine(
-                    ImVec2{p_max.x, p_max.y -
+                    ImVec2{
+                        p_max.x, p_max.y -
                         ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) *
-                            std::abs(p_max.y - p_min.y)},
+                        std::abs(p_max.y - p_min.y)
+                    },
                     p_max,
                     ImColor(0, 255, 0, 255),
                     2.f);
@@ -471,7 +494,6 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
             ImVec2{ a + w + 10 / alpha, b },
             ImColor(0, 255, 0, 255));
             */
-
 
 
         /*

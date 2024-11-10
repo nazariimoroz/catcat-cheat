@@ -27,6 +27,8 @@ namespace gui
 	// and close menu :)
 	inline bool isRunning = true;
 
+	inline bool show_menu = false;
+
 	// winapi window vars
 	inline HWND window = nullptr;
 	inline HWND dow_hwnd = nullptr;

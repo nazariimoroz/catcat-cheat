@@ -103,7 +103,7 @@ std::tuple<std::vector<player_t>, size_t> get_all_players(uintptr_t entity_list_
     std::vector<player_t> players;
     ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 0x10;
 
-    if(global_t::list_size == 0)
+    if (global_t::list_size == 0)
     {
         ex::var<uint32_t> ex_list_size = entity_list_sys_ptr + 0x1534;
         global_t::list_size = *ex_list_size;
@@ -283,7 +283,7 @@ float get_coef(float fov, float global_sense, float aim_sense_mul, bool in_aim)
         * global_sense
         * fov;
 
-    if(in_aim)
+    if (in_aim)
     {
         final_coef *= ((0.5085f * aim_sense_mul) + 0.44037767f);
     }
@@ -295,6 +295,86 @@ bool in_game(uintptr_t local_player_ptr_address)
 {
     ex::var<uintptr_t> local_player_address = local_player_ptr_address;
     return *local_player_address.get();
+}
+
+void aim(std::vector<player_t>& players_list, ex::var<SenseSetting>& sense_settings, player_t& local_player)
+{
+    bool aim_worked = false;
+    if (
+        (settings_t::aim_scope == scope_t::scope_only && local_player.view_render->fov < 80.f) ||
+        (settings_t::aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
+        settings_t::aim_scope == scope_t::scope_and_noscope)
+    {
+        if (!(GetAsyncKeyState(VK_LBUTTON) & 0x8000))
+        {
+            goto AIM_EXIT;
+        }
+        player_t* closest_player = nullptr;
+        xyz_t closest_player_screen = {0, 0, INFINITY};
+        for (auto& i : players_list)
+        {
+            if (i.player_t::ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
+                continue;
+
+            if (i.player_t::ex_pawn->m_lifeState != 0)
+                continue;
+
+            auto [xyw, is_ok] = gui::world_to_screen(i.player_t::head_pos, local_player.matrix.get());
+            if (!is_ok)
+                continue;
+
+            if (xyw.z >= settings_t::aim_max_distance)
+                continue;
+
+            if (!global_t::aim_locked_on_hero.empty() && xyw.z <= settings_t::aim_lost_distance)
+            {
+                if (i.player_t::hero_name == global_t::aim_locked_on_hero)
+                {
+                    closest_player = &i;
+                    closest_player_screen = xyw;
+                    break;
+                }
+            }
+
+            if (closest_player_screen.z > xyw.z)
+            {
+                closest_player_screen = xyw;
+                closest_player = &i;
+            }
+        }
+
+        if (closest_player)
+        {
+            if (global_t::aim_locked_on_hero.empty()
+                || global_t::aim_locked_on_hero != closest_player->hero_name)
+            {
+                global_t::aim_locked_on_hero = closest_player->hero_name;
+            }
+            xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
+
+            auto result = closest_player_screen - cursor_pos;
+            result.z = 0;
+
+            float coef = get_coef(local_player.view_render->fov,
+                                  sense_settings->global_sense,
+                                  sense_settings->aim_sense_coef,
+                                  local_player.view_render->fov < 80.f);
+
+            float fov_per_pixel = local_player.view_render->fov / (float)gui::WIDTH / 2;
+            result.x = (result.x * fov_per_pixel) / coef;
+            result.y = (result.y * fov_per_pixel) / coef;
+
+            move_mouse(result.x, result.y);
+
+            aim_worked = true;
+        }
+    }
+
+    AIM_EXIT: {}
+    if (!aim_worked)
+    {
+        global_t::aim_locked_on_hero.clear();
+    }
 }
 
 int main()
@@ -366,7 +446,9 @@ int main()
     ex::signature_t CCameraManagerSig("48 8D 3D ? ? ? ? 8B D9", 3, 7);
     ex::signature_t gameEntitySystemSig("48 8B 1D ? ? ? ? 48 89 1D", 3, 7);
     ex::signature_t viewRenderSig("48 89 05 ? ? ? ? 48 8B C8 48 85 C0", 3, 7);
-    ex::signature_t senseSettingsSig("48 8B 05 ? ? ? ? 48 8B 40 08 80 38 00 74 ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? 48 8B B4 24 ? ? ? ?", 3, 7);
+    ex::signature_t senseSettingsSig(
+        "48 8B 05 ? ? ? ? 48 8B 40 08 80 38 00 74 ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? 48 8B B4 24 ? ? ? ?",
+        3, 7);
 
     std::string process_name = "project8.exe";
     ex::set_global_handle(getProcessHandle(process_name));
@@ -413,7 +495,8 @@ int main()
     CCameraManagerSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
 
     std::cout << "Sense settings: " << std::endl;
-    uintptr_t senseSettingsOffsetPtrStat = senseSettingsSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+    uintptr_t senseSettingsOffsetPtrStat = senseSettingsSig.find(memory, ex::get_global_handle(),
+                                                                 reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
 
     ex::var<uintptr_t> senseSettingsPtr =
         reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + senseSettingsOffsetPtrStat;
@@ -427,22 +510,25 @@ int main()
     }
     gui::CreateImGui();
 
+    settings_t::load_settings();
     while (gui::isRunning)
     {
         if (GetAsyncKeyState(VK_BACK) & 0x8000)
             break;
 
-        if(!in_game(localPlayerOffset + reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll)))
+        if (!in_game(localPlayerOffset + reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll)))
         {
             std::cout << "In Menu" << std::endl;
             global_t::list_size = 0;
             continue;
         }
 
-        ex::var<SenseSetting> sense_settings { *senseSettingsPtr.get(), std::make_tuple(
-            &SenseSetting::global_sense,
-            &SenseSetting::aim_sense_coef
-        )};
+        ex::var<SenseSetting> sense_settings{
+            *senseSettingsPtr.get(), std::make_tuple(
+                &SenseSetting::global_sense,
+                &SenseSetting::aim_sense_coef
+            )
+        };
 
         ex::var<uintptr_t> ex_entity_list_ptr
             = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
@@ -470,84 +556,9 @@ int main()
         gui::Render(players_list, local_player);
         gui::EndRender();
 
-
-        bool aim_worked = false;
-        do
+        if(!gui::show_menu && settings_t::aim)
         {
-            if (
-                (settings_t::aim_scope == scope_t::scope_only && local_player.view_render->fov < 80.f) ||
-                (settings_t::aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
-                settings_t::aim_scope == scope_t::scope_and_noscope)
-            {
-                if (!(GetAsyncKeyState(VK_LBUTTON) & 0x8000))
-                {
-                    break;
-                }
-                player_t* closest_player = nullptr;
-                xyz_t closest_player_screen = {0, 0, INFINITY};
-                for (auto& i : players_list)
-                {
-                    if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
-                        continue;
-
-                    if (i.ex_pawn->m_lifeState != 0)
-                        continue;
-
-                    auto [xyw, is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
-                    if (!is_ok)
-                        continue;
-
-                    if (xyw.z >= settings_t::aim_max_distance)
-                        continue;
-
-                    if (!global_t::aim_locked_on_hero.empty() && xyw.z <= settings_t::aim_lost_distance)
-                    {
-                        if (i.hero_name == global_t::aim_locked_on_hero)
-                        {
-                            closest_player = &i;
-                            closest_player_screen = xyw;
-                            break;
-                        }
-                    }
-
-                    if (closest_player_screen.z > xyw.z)
-                    {
-                        closest_player_screen = xyw;
-                        closest_player = &i;
-                    }
-                }
-
-                if (closest_player)
-                {
-                    if (global_t::aim_locked_on_hero.empty()
-                        || global_t::aim_locked_on_hero != closest_player->hero_name)
-                    {
-                        global_t::aim_locked_on_hero = closest_player->hero_name;
-                    }
-                    xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
-
-                    auto result = closest_player_screen - cursor_pos;
-                    result.z = 0;
-
-                    float coef = get_coef(local_player.view_render->fov,
-                        sense_settings->global_sense,
-                        sense_settings->aim_sense_coef,
-                        local_player.view_render->fov < 80.f);
-
-                    float fov_per_pixel = local_player.view_render->fov / (float)gui::WIDTH / 2;
-                    result.x = (result.x * fov_per_pixel) / coef;
-                    result.y = (result.y * fov_per_pixel) / coef;
-
-                    move_mouse(result.x, result.y);
-
-                    aim_worked = true;
-                }
-            }
-        }
-        while (false);
-        if (!aim_worked)
-        {
-            global_t::aim_locked_on_hero.clear();
+            aim(players_list, sense_settings, local_player);
         }
     }
 

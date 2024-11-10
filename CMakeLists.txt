@@ -30,7 +30,8 @@ add_executable(${PROJECT_NAME} main.cpp
         externallib/memory.h
         externallib/memory.cpp
         settings.h
-        global_t.h)
+        global_t.h
+        settings.cpp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         imgui::imgui
