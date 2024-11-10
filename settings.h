@@ -3,6 +3,8 @@
 #include <string>
 #include <string_view>
 
+#include "dl_memory.h"
+
 enum class scope_t : int32_t
 {
     scope_and_noscope,
@@ -32,16 +34,16 @@ public:
 #pragma region Aim
     inline static bool aim = true;
     inline static scope_t aim_scope = scope_t::scope_only;
-
     inline static float aim_max_distance = 2000.f;
-
     // if distance to enemy1 >= aim_lost_distance, and there are other enemy in range
     // cheat will pick closest enemy
     inline static float aim_lost_distance = 2000.f;
+    inline static int aim_key = VK_LBUTTON;
 
     inline static bool orb_aim = true;
     inline static scope_t orb_aim_scope = scope_t::noscope_only;
     inline static float orb_aim_max_distance = 2000.f;
+    inline static int orb_aim_key = VK_LBUTTON;
 #pragma endregion Aim
 
 #pragma region Esp
@@ -50,6 +52,10 @@ public:
 
     inline static bool esp_with_health = true;
 #pragma endregion Esp
+
+#pragma region Other
+    inline static int exit_key = VK_NUMPAD0;
+#pragma endregion Other
 };
 
 #endif //SETTINGS_H

@@ -151,16 +151,16 @@ void aim(std::vector<player_t>& players_list,
 {
     bool aim_worked = false;
 
-    if (!(GetAsyncKeyState(VK_LBUTTON) & 0x8000))
-    {
-        goto AIM_EXIT;
-    }
-
     if ( settings_t::aim &&
         ((settings_t::aim_scope == scope_t::scope_only && local_player.view_render->fov < 80.f) ||
         (settings_t::aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
         settings_t::aim_scope == scope_t::scope_and_noscope))
     {
+        if (!(GetAsyncKeyState(settings_t::aim_key) & 0x8000))
+        {
+            goto SKIP_AIM;
+        }
+
         player_t* closest_player = nullptr;
         xyz_t closest_player_screen = {0, 0, INFINITY};
         for (auto& i : players_list)
@@ -222,6 +222,8 @@ void aim(std::vector<player_t>& players_list,
         }
     }
 
+    SKIP_AIM:
+
     if(aim_worked)
         goto AIM_EXIT;
 
@@ -230,6 +232,11 @@ void aim(std::vector<player_t>& players_list,
         (settings_t::orb_aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
         settings_t::orb_aim_scope == scope_t::scope_and_noscope))
     {
+        if (!(GetAsyncKeyState(settings_t::orb_aim_key) & 0x8000))
+        {
+            goto AIM_EXIT;
+        }
+
         orb_t* closest_orb = nullptr;
         xyz_t closest_orb_screen = {0, 0, INFINITY};
         float min_len = INFINITY;
@@ -420,7 +427,7 @@ int main()
     settings_t::load_settings();
     while (gui::isRunning)
     {
-        if (GetAsyncKeyState(VK_BACK) & 0x8000)
+        if (GetAsyncKeyState(settings_t::exit_key) & 0x8000)
             break;
 
         if (!in_game(localPlayerOffset + reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll)))

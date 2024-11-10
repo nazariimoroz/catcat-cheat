@@ -343,6 +343,78 @@ void draw_menu()
             }
             if (ImGui::BeginTabItem("Config"))
             {
+                // Choose aim key
+                {
+                    if(ImGui::Button("Choose aim key")){
+                        ImGui::OpenPopup("aim_key_popup");
+                    }
+                    if (ImGui::BeginPopup("aim_key_popup")) {
+                        ImGui::Text("Press any key to set it as the activation key");
+                        for (int i = 0; i < 256; ++i) {
+                            if (GetAsyncKeyState(i) & 0x8000) {
+                                settings_t::aim_key = i;
+                                settings_t::save_settings();
+                                ImGui::CloseCurrentPopup();
+                                break;
+                            }
+                        }
+                        ImGui::EndPopup();
+                    }
+
+                    ImGui::SameLine();
+
+                    const auto key_name = get_key_name(settings_t::aim_key);
+                    ImGui::Text("Current aim key: %s", key_name.c_str());
+                }
+
+                // Choose orb aim key
+                {
+                    if(ImGui::Button("Choose orb aim key")){
+                        ImGui::OpenPopup("orb_aim_key_popup");
+                    }
+                    if (ImGui::BeginPopup("orb_aim_key_popup")) {
+                        ImGui::Text("Press any key to set it as the activation key");
+                        for (int i = 0; i < 256; ++i) {
+                            if (GetAsyncKeyState(i) & 0x8000) {
+                                settings_t::orb_aim_key = i;
+                                settings_t::save_settings();
+                                ImGui::CloseCurrentPopup();
+                                break;
+                            }
+                        }
+                        ImGui::EndPopup();
+                    }
+
+                    ImGui::SameLine();
+
+                    const auto key_name = get_key_name(settings_t::orb_aim_key);
+                    ImGui::Text("Current orb aim key: %s", key_name.c_str());
+                }
+
+                // Choose exit key
+                {
+                    if(ImGui::Button("Choose exit key")){
+                        ImGui::OpenPopup("exit_key_popup");
+                    }
+                    if (ImGui::BeginPopup("exit_key_popup")) {
+                        ImGui::Text("Press any key to set it as the activation key");
+                        for (int i = 0; i < 256; ++i) {
+                            if (GetAsyncKeyState(i) & 0x8000) {
+                                settings_t::exit_key = i;
+                                settings_t::save_settings();
+                                ImGui::CloseCurrentPopup();
+                                break;
+                            }
+                        }
+                        ImGui::EndPopup();
+                    }
+
+                    ImGui::SameLine();
+
+                    const auto key_name = get_key_name(settings_t::exit_key);
+                    ImGui::Text("Current exit key: %s", key_name.c_str());
+                }
+
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
