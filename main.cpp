@@ -178,6 +178,12 @@ void aim(std::vector<player_t>& players_list,
             if (xyw.z >= settings_t::aim_max_distance)
                 continue;
 
+            xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
+            auto len = glm::length(static_cast<glm::vec3>(xyw.xy0() - cursor_pos));
+
+            if(settings_t::aim_circle && len > settings_t::aim_circle_radius_in_px)
+                continue;
+
             if (!global_t::aim_locked_on_hero.empty() && xyw.z <= settings_t::aim_lost_distance)
             {
                 if (i.hero_name == global_t::aim_locked_on_hero)
@@ -254,6 +260,9 @@ void aim(std::vector<player_t>& players_list,
 
             xyz_t cursor_pos = {(float)gui::WIDTH / 2.f, (float)gui::HEIGHT / 2.f};
             auto new_len = glm::length(static_cast<glm::vec3>(xyw.xy0() - cursor_pos));
+
+            if(settings_t::aim_circle && new_len > settings_t::aim_circle_radius_in_px)
+                continue;
 
             if (min_len > new_len)
             {

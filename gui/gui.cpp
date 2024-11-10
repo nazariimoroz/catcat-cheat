@@ -339,6 +339,14 @@ void draw_menu()
                         settings_t::save_settings();
                 }
 
+                {
+                    if (ImGui::Checkbox("Aim circle", &settings_t::aim_circle))
+                        settings_t::save_settings();
+
+                    if(ImGui::InputFloat("Aim circle radius in px", &settings_t::aim_circle_radius_in_px))
+                        settings_t::save_settings();
+                }
+
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Config"))
@@ -417,6 +425,7 @@ void draw_menu()
 
                 ImGui::EndTabItem();
             }
+
             ImGui::EndTabBar();
         }
         ImGui::End();
@@ -519,7 +528,7 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
 {
     draw_menu();
 
-    if (show_menu || !settings_t::esp || !gui::is_dd_activated())
+    if(show_menu || !gui::is_dd_activated())
         return;
 
     ImGui::SetNextWindowPos({0, 0});
@@ -535,76 +544,90 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
         ImGuiWindowFlags_NoTitleBar
     );
 
-    for (auto& i : players_list)
+    if (settings_t::esp)
     {
-        if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
-            continue;
-
-        auto [bottom_pos, bottom_pos_is_ok] = gui::world_to_screen(i.world_pos, local_player.matrix.get());
-        auto [head_pos, head_pos_is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
-
-        if (bottom_pos.z > settings_t::esp_max_distance)
-            continue;
-
-        if (!bottom_pos_is_ok || !head_pos_is_ok)
-            continue;
-
-        // esp box
+        for (auto& i : players_list)
         {
-            float width = std::abs(head_pos.y - bottom_pos.y) * 0.7;
+            if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
+                continue;
 
-            ImVec2 p_min = ImVec2{bottom_pos.x + width / 2.f, head_pos.y - (bottom_pos.y - head_pos.y) * 0.1f};
-            ImVec2 p_max = ImVec2{bottom_pos.x - width / 2.f, bottom_pos.y};
+            auto [bottom_pos, bottom_pos_is_ok] = gui::world_to_screen(i.world_pos, local_player.matrix.get());
+            auto [head_pos, head_pos_is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
 
-            ImGui::GetWindowDrawList()->AddRect(
-                p_min,
-                p_max,
-                ImColor(255, 0, 0, 255),
-                0,
-                ImDrawFlags_None,
-                1.f);
+            if (bottom_pos.z > settings_t::esp_max_distance)
+                continue;
 
-            // esp box hp
-            if(settings_t::esp_with_health){
-                ImGui::GetWindowDrawList()->AddLine(
-                    ImVec2{
-                        p_max.x, p_max.y -
-                        ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) *
-                        std::abs(p_max.y - p_min.y)
-                    },
+            if (!bottom_pos_is_ok || !head_pos_is_ok)
+                continue;
+
+            // esp box
+            {
+                float width = std::abs(head_pos.y - bottom_pos.y) * 0.7;
+
+                ImVec2 p_min = ImVec2{bottom_pos.x + width / 2.f, head_pos.y - (bottom_pos.y - head_pos.y) * 0.1f};
+                ImVec2 p_max = ImVec2{bottom_pos.x - width / 2.f, bottom_pos.y};
+
+                ImGui::GetWindowDrawList()->AddRect(
+                    p_min,
                     p_max,
-                    ImColor(0, 255, 0, 255),
-                    2.f);
+                    ImColor(255, 0, 0, 255),
+                    0,
+                    ImDrawFlags_None,
+                    1.f);
+
+                // esp box hp
+                if(settings_t::esp_with_health){
+                    ImGui::GetWindowDrawList()->AddLine(
+                        ImVec2{
+                            p_max.x, p_max.y -
+                            ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) *
+                            std::abs(p_max.y - p_min.y)
+                        },
+                        p_max,
+                        ImColor(0, 255, 0, 255),
+                        2.f);
+                }
             }
-        }
 
-        if (bottom_pos.z > 500.f)
-        {
+            if (bottom_pos.z > 500.f)
+            {
+                /*
+                ImGui::GetWindowDrawList()->AddText(
+                    ImVec2{a + w + 10 / alpha, b - h},
+                    ImColor(255, 0, 0, 255),
+                    i.hero_name.c_str());*/
+            }
+
             /*
-            ImGui::GetWindowDrawList()->AddText(
-                ImVec2{a + w + 10 / alpha, b - h},
-                ImColor(255, 0, 0, 255),
-                i.hero_name.c_str());*/
+            ImGui::GetWindowDrawList()->AddRectFilled(
+                ImVec2{ a + w + 5 / alpha, b },
+                ImVec2{ a + w + 10 / alpha, b - h},
+                ImColor(255, 0, 0, 255));
+
+            ImGui::GetWindowDrawList()->AddRectFilled(
+                ImVec2{ a + w + 5 / alpha, b - ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) * h },
+                ImVec2{ a + w + 10 / alpha, b },
+                ImColor(0, 255, 0, 255));
+                */
+
+
+            /*
+            ImGui::GetWindowDrawList()->AddCircle(
+                ImVec2{a, b},
+                5,
+                ImColor(0, 255, 0, 255));*/
         }
+    }
 
-        /*
-        ImGui::GetWindowDrawList()->AddRectFilled(
-            ImVec2{ a + w + 5 / alpha, b },
-            ImVec2{ a + w + 10 / alpha, b - h},
-            ImColor(255, 0, 0, 255));
-
-        ImGui::GetWindowDrawList()->AddRectFilled(
-            ImVec2{ a + w + 5 / alpha, b - ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) * h },
-            ImVec2{ a + w + 10 / alpha, b },
-            ImColor(0, 255, 0, 255));
-            */
-
-
-        /*
+    if(settings_t::aim_circle)
+    {
+        ImVec2 center { gui::WIDTH / 2.f, gui::HEIGHT / 2.f };
         ImGui::GetWindowDrawList()->AddCircle(
-            ImVec2{a, b},
-            5,
-            ImColor(0, 255, 0, 255));*/
+            center,
+            settings_t::aim_circle_radius_in_px,
+            ImColor(100, 100, 100, 50),
+            ImDrawFlags_None,
+            1.f);
     }
 
     ImGui::End();

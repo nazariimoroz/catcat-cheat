@@ -44,6 +44,9 @@ public:
     inline static scope_t orb_aim_scope = scope_t::noscope_only;
     inline static float orb_aim_max_distance = 2000.f;
     inline static int orb_aim_key = VK_LBUTTON;
+
+    inline static bool aim_circle = true;
+    inline static float aim_circle_radius_in_px = 100.f;
 #pragma endregion Aim
 
 #pragma region Esp
