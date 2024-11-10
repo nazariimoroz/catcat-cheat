@@ -17,9 +17,10 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
     ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 0x10;
 
     ex::var<uint32_t> ex_list_size = entity_list_sys_ptr + 0x1534;
-    global_t::list_size = 1024;
+    global_t::list_size = *ex_list_size;
 
-    for (int i = 0; i < global_t::list_size; ++i)
+    int list_itter = 0;
+    for (int i = 0; list_itter < global_t::list_size; ++i)
     {
         player_t player{};
         ex::var<uintptr_t> ex_entity_inst_address
@@ -27,6 +28,8 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
 
         if (*ex_entity_inst_address == 0)
             continue;
+
+        list_itter += 1;
 
         std::string design_name = get_entity_design_name(*ex_entity_inst_address);
         if (design_name == "citadel_player_controller")
