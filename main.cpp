@@ -16,6 +16,7 @@
 
 #include <gui/gui.h>
 
+#include ".env.h"
 #include "dl_memory.h"
 #include "global_t.h"
 #include "matrix3x4.h"
@@ -301,7 +302,7 @@ void aim(std::vector<player_t>& players_list,
     }
 }
 
-int main()
+int ex_main()
 {
     // aim coef testing
 #if 0
@@ -366,18 +367,19 @@ int main()
     ex::signature_t localPlayerSig("48 8B 0D ? ? ? ? 48 85 C9 74 65 83 FF FF", 3, 7);
     ex::signature_t viewMatrixSig("48 8D ? ? ? ? ? 48 C1 E0 06 48 03 C1 C3", 3, 7);
     ex::signature_t entityListSig("48 8B 0D ? ? ? ? 8B C5 48 C1 E8", 3, 7);
-    ex::signature_t CCameraManagerSig("48 8D 3D ? ? ? ? 8B D9", 3, 7);
-    ex::signature_t gameEntitySystemSig("48 8B 1D ? ? ? ? 48 89 1D", 3, 7);
     ex::signature_t viewRenderSig("48 89 05 ? ? ? ? 48 8B C8 48 85 C0", 3, 7);
     ex::signature_t senseSettingsSig(
         "48 8B 05 ? ? ? ? 48 8B 40 08 80 38 00 74 ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? 48 8B B4 24 ? ? ? ?",
         3, 7);
 
+    RESTART:
     std::string process_name = "project8.exe";
     ex::set_global_handle(getProcessHandle(process_name));
     if (!ex::get_global_handle())
     {
-        EX_LOG("Error: {} not found", process_name);
+        if(MessageBoxA(nullptr, "Open Deadlock first", nullptr,
+            MB_RETRYCANCEL) == 4)
+            goto RESTART;
         return 1;
     }
 
@@ -385,7 +387,9 @@ int main()
 
     if (!module_info.lpBaseOfDll)
     {
-        EX_LOG("Error: client.dll not found!");
+        if(MessageBoxA(nullptr, "Open Deadlock first", nullptr,
+            MB_RETRYCANCEL) == 4)
+            goto RESTART;
         return 1;
     }
 
@@ -412,11 +416,6 @@ int main()
     uintptr_t entityListOffset = entityListSig.find(memory, ex::get_global_handle(),
                                                     reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
 
-    std::cout << "dwGameEntitySystem:" << std::endl;
-    gameEntitySystemSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
-    std::cout << "CCameraManager:" << std::endl;
-    CCameraManagerSig.find(memory, ex::get_global_handle(), reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
-
     std::cout << "Sense settings: " << std::endl;
     uintptr_t senseSettingsOffsetPtrStat = senseSettingsSig.find(memory, ex::get_global_handle(),
                                                                  reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
@@ -426,7 +425,7 @@ int main()
 
 #pragma endregion CHEAT
 
-    gui::CreateHWindow("Deadlock", "DDMenu");
+    gui::CreateHWindow("Deadlock", WINDOW_NAME_A);
     if (!gui::CreateDevice())
     {
         return 1;
@@ -436,12 +435,18 @@ int main()
     settings_t::load_settings();
     while (gui::isRunning)
     {
+        if(UNIX_TIME_EXPIRY < std::chrono::duration_cast<std::chrono::seconds>(
+                   std::chrono::system_clock::now().time_since_epoch()).count())
+        {
+            MessageBoxA(nullptr, "The license have expired", nullptr, MB_OK);
+            return 0;
+        }
+
         if (GetAsyncKeyState(settings_t::exit_key) & 0x8000)
             break;
 
         if (!in_game(localPlayerOffset + reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll)))
         {
-            std::cout << "In Menu" << std::endl;
             global_t::list_size = 0;
             continue;
         }
@@ -494,4 +499,9 @@ int main()
 
     //CloseHandle(processHandle);
     return 0;
+}
+
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+{
+    return ex_main();
 }

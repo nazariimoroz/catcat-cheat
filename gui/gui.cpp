@@ -11,6 +11,7 @@
 #include <imgui/backends/imgui_impl_win32.h>
 #include <glm/glm.hpp>
 
+#include ".env.h"
 #include "matrix3x4.h"
 #include "settings.h"
 #include "source2sdk/client/CBodyComponent.hpp"
@@ -422,6 +423,24 @@ void draw_menu()
                     const auto key_name = get_key_name(settings_t::exit_key);
                     ImGui::Text("Current exit key: %s", key_name.c_str());
                 }
+
+                using namespace std::chrono;
+
+                const auto expiry_in = UNIX_TIME_EXPIRY
+                    - duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+                auto duration = time_point<system_clock>(seconds(expiry_in)).time_since_epoch();
+
+                auto days = duration_cast<std::chrono::days>(duration);
+                duration -= days;
+                auto hours = duration_cast<std::chrono::hours>(duration);
+                duration -= hours;
+                auto minutes = duration_cast<std::chrono::minutes>(duration);
+                duration -= minutes;
+
+                ImGui::Text("License will expire in %i days, %i hours and %i minutes",
+                    days.count(),
+                    hours.count(),
+                    minutes.count());
 
                 ImGui::EndTabItem();
             }

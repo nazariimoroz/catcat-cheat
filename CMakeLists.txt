@@ -14,7 +14,7 @@ file(GLOB ${PROJECT_NAME}_SDK_SRC
         #"imgui/*/*.cpp"
 )
 
-add_executable(${PROJECT_NAME} main.cpp
+add_executable(${PROJECT_NAME} WIN32 main.cpp
         ${${PROJECT_NAME}_SDK_SRC}
         imgui/backends/imgui_impl_win32.h
         imgui/backends/imgui_impl_win32.cpp
@@ -33,7 +33,8 @@ add_executable(${PROJECT_NAME} main.cpp
         global_t.h
         settings.cpp
         dl_memory.h
-        dl_memory.cpp)
+        dl_memory.cpp
+        .env.h)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         imgui::imgui
