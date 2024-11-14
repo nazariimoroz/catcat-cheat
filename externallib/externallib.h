@@ -18,8 +18,10 @@
 
 #ifndef _NDEBUG
 #define EX_LOG(FMT, ...) std::osyncstream(std::cerr) << std::format(FMT ,##__VA_ARGS__) << std::endl
+#define EX_ERROR(FMT, ...) std::osyncstream(std::cerr) << std::format(FMT ,##__VA_ARGS__) << std::endl
 #else
 #define EX_DLOG(FMT, ...) do {} while (0)
+#define EX_ERROR(FMT, ...) do {} while (0)
 #endif
 
 #define EX_BYTES_TO_PTR(DATA) *(uintptr_t*)DATA

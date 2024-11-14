@@ -45,7 +45,8 @@ namespace gui
 	bool is_dd_activated();
 
 	// handle window creation & destruction
-	void CreateHWindow(const char* draw_on_windows, const char* windowName) noexcept;
+	bool FindDowWindow(const char* dow_name);
+	void CreateHWindow(const char* windowName) noexcept;
 	void DestroyHWindow() noexcept;
 
 	// handle device creation & destruction

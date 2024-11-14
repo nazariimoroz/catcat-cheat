@@ -12,6 +12,7 @@
 #include <glm/glm.hpp>
 
 #include ".env.h"
+#include "global_t.h"
 #include "matrix3x4.h"
 #include "settings.h"
 #include "source2sdk/client/CBodyComponent.hpp"
@@ -114,12 +115,14 @@ bool gui::is_dd_activated()
     return GetForegroundWindow() == dow_hwnd;
 }
 
-void gui::CreateHWindow(const char* draw_on_windows, const char* windowName) noexcept
+bool gui::FindDowWindow(const char* dow_name)
 {
-    dow_hwnd = FindWindowA(NULL, draw_on_windows);
-    if (!dow_hwnd)
-        return;
+    dow_hwnd = FindWindowA(NULL, dow_name);
+    return !!dow_hwnd;
+}
 
+void gui::CreateHWindow(const char* windowName) noexcept
+{
     RECT rect;
     GetWindowRect(dow_hwnd, &rect);
 
@@ -453,11 +456,12 @@ void draw_menu()
 
 void gui::BeginRender() noexcept
 {
+    /* TODO Make it one in several seconds
     RECT rect;
     GetWindowRect(dow_hwnd, &rect);
     SetWindowPos(window, HWND_TOPMOST, rect.left, rect.top, 0, 0, SWP_NOSIZE);
     ShowWindow(window, SW_SHOWDEFAULT);
-    UpdateWindow(window);
+    UpdateWindow(window);*/
 
     MSG message;
     while (PeekMessage(&message, 0, 0, 0, PM_REMOVE))
@@ -547,7 +551,7 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
 {
     draw_menu();
 
-    if(show_menu || !gui::is_dd_activated())
+    if(show_menu || !gui::is_dd_activated() || global_t::in_game)
         return;
 
     ImGui::SetNextWindowPos({0, 0});

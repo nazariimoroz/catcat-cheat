@@ -363,7 +363,7 @@ int ex_main()
     return 1;
 #endif
 
-#pragma region GET_ALL_SIGS
+#pragma region SigsInition GettingDdHandle GettingsOffsetsFromSigs
     ex::signature_t localPlayerSig("48 8B 0D ? ? ? ? 48 85 C9 74 65 83 FF FF", 3, 7);
     ex::signature_t viewMatrixSig("48 8D ? ? ? ? ? 48 C1 E0 06 48 03 C1 C3", 3, 7);
     ex::signature_t entityListSig("48 8B 0D ? ? ? ? 8B C5 48 C1 E8", 3, 7);
@@ -372,124 +372,166 @@ int ex_main()
         "48 8B 05 ? ? ? ? 48 8B 40 08 80 38 00 74 ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? F3 ? ? 06 F3 ? ? 05 ? ? ? ? 48 8B B4 24 ? ? ? ?",
         3, 7);
 
-    RESTART:
-    std::string process_name = "project8.exe";
-    ex::set_global_handle(getProcessHandle(process_name));
-    if (!ex::get_global_handle())
+    while(true)
     {
-        if(MessageBoxA(nullptr, "Open Deadlock first", nullptr,
-            MB_RETRYCANCEL) == 4)
-            goto RESTART;
-        return 1;
-    }
-
-    MODULEINFO module_info = getModuleInfo(ex::get_global_handle(), "client.dll");
-
-    if (!module_info.lpBaseOfDll)
-    {
-        if(MessageBoxA(nullptr, "Open Deadlock first", nullptr,
-            MB_RETRYCANCEL) == 4)
-            goto RESTART;
-        return 1;
-    }
-
-    std::vector<uint8_t> memory;
-    memory.resize(module_info.SizeOfImage);
-    ex::read_memory_into_array((char*)memory.data(),
-                               ex::get_global_handle(),
-                               reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll),
-                               module_info.SizeOfImage);
-
-    std::cout << "dwLocalPlayerController:" << std::endl;
-    uintptr_t localPlayerOffset = localPlayerSig.find(memory, ex::get_global_handle(),
-                                                      reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
-
-    std::cout << "dwViewMatrix:" << std::endl;
-    uintptr_t viewMatrixOffset = viewMatrixSig.find(memory, ex::get_global_handle(),
-                                                    reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
-
-    std::cout << "dwViewRender:" << std::endl;
-    uintptr_t viewRenderOffset = viewRenderSig.find(memory, ex::get_global_handle(),
-                                                    reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
-
-    std::cout << "dwEntityList:" << std::endl;
-    uintptr_t entityListOffset = entityListSig.find(memory, ex::get_global_handle(),
-                                                    reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
-
-    std::cout << "Sense settings: " << std::endl;
-    uintptr_t senseSettingsOffsetPtrStat = senseSettingsSig.find(memory, ex::get_global_handle(),
-                                                                 reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
-
-    ex::var<uintptr_t> senseSettingsPtr =
-        reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + senseSettingsOffsetPtrStat;
-
-#pragma endregion CHEAT
-
-    gui::CreateHWindow("Deadlock", WINDOW_NAME_A);
-    if (!gui::CreateDevice())
-    {
-        return 1;
-    }
-    gui::CreateImGui();
-
-    settings_t::load_settings();
-    while (gui::isRunning)
-    {
-        if(UNIX_TIME_EXPIRY < std::chrono::duration_cast<std::chrono::seconds>(
-                   std::chrono::system_clock::now().time_since_epoch()).count())
+        std::string process_name = "project8.exe";
+        ex::set_global_handle(getProcessHandle(process_name));
+        if (!ex::get_global_handle())
         {
-            MessageBoxA(nullptr, "The license have expired", nullptr, MB_OK);
-            return 0;
+            if(MessageBoxA(nullptr, "Open Deadlock first", nullptr,
+                MB_RETRYCANCEL | MB_SYSTEMMODAL) == 4)
+                continue;
+            break;
         }
 
-        if (GetAsyncKeyState(settings_t::exit_key) & 0x8000)
-            break;
+        MODULEINFO module_info = getModuleInfo(ex::get_global_handle(), "client.dll");
 
-        if (!in_game(localPlayerOffset + reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll)))
+        if (!module_info.lpBaseOfDll)
         {
-            global_t::list_size = 0;
+            if(MessageBoxA(nullptr, "Open Deadlock first", nullptr,
+                MB_RETRYCANCEL | MB_SYSTEMMODAL) == 4)
+                continue;
+            break;
+        }
+
+        std::vector<uint8_t> memory;
+        memory.resize(module_info.SizeOfImage);
+        ex::read_memory_into_array((char*)memory.data(),
+                                   ex::get_global_handle(),
+                                   reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll),
+                                   module_info.SizeOfImage);
+
+        std::cout << "dwLocalPlayerController:" << std::endl;
+        uintptr_t localPlayerOffset = localPlayerSig.find(memory, ex::get_global_handle(),
+                                                          reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+
+        std::cout << "dwViewMatrix:" << std::endl;
+        uintptr_t viewMatrixOffset = viewMatrixSig.find(memory, ex::get_global_handle(),
+                                                        reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+
+        std::cout << "dwViewRender:" << std::endl;
+        uintptr_t viewRenderOffset = viewRenderSig.find(memory, ex::get_global_handle(),
+                                                        reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+
+        std::cout << "dwEntityList:" << std::endl;
+        uintptr_t entityListOffset = entityListSig.find(memory, ex::get_global_handle(),
+                                                        reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+
+        std::cout << "Sense settings: " << std::endl;
+        uintptr_t senseSettingsOffsetPtrStat = senseSettingsSig.find(memory, ex::get_global_handle(),
+                                                                     reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+
+        ex::var<uintptr_t> senseSettingsPtr =
+            reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + senseSettingsOffsetPtrStat;
+
+#pragma endregion SigsInition GettingDdHandle GettingsOffsetsFromSIgs
+
+        if(!gui::FindDowWindow("Deadlock"))
+        {
+            if(MessageBoxA(nullptr, "Open Deadlock first", nullptr,
+                MB_RETRYCANCEL | MB_SYSTEMMODAL) == 4)
+                continue;
+            break;
+        }
+        if(!global_t::gui_is_inited)
+        {
+            gui::CreateHWindow(WINDOW_NAME_A);
+            if (!gui::CreateDevice())
+            {
+                return 1;
+            }
+            gui::CreateImGui();
+        }
+
+#pragma region Settings Globals
+        bool is_dd_window_closed = false;
+        global_t::gui_is_inited = true;
+        settings_t::load_settings();
+#pragma endregion Settings Globals
+
+        while (gui::isRunning)
+        {
+            if(!IsWindow(gui::dow_hwnd))
+            {
+                is_dd_window_closed = true;
+                break;
+            }
+            if(UNIX_TIME_EXPIRY < std::chrono::duration_cast<std::chrono::seconds>(
+                       std::chrono::system_clock::now().time_since_epoch()).count())
+            {
+                MessageBoxA(nullptr, "The license have expired", nullptr, MB_OK | MB_SYSTEMMODAL);
+                return 0;
+            }
+
+            if (GetAsyncKeyState(settings_t::exit_key) & 0x8000)
+                break;
+
+            global_t::in_game = in_game(localPlayerOffset + reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll));
+            if (!global_t::in_game)
+            {
+                global_t::list_size = 0;
+                break;
+            }
+
+            ex::var<SenseSetting> sense_settings{
+                *senseSettingsPtr.get(), std::make_tuple(
+                    &SenseSetting::global_sense,
+                    &SenseSetting::aim_sense_coef
+                )
+            };
+
+            ex::var<uintptr_t> ex_entity_list_ptr
+                = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
+
+            auto [players_list, local_player_i,
+                orbs_list] = dl_memory_t::get_all_entities(*ex_entity_list_ptr);
+            auto& local_player = players_list[local_player_i];
+
+            // initing local_player
+            {
+                ex::var<Urho3D::Matrix3x4> matrix
+                    = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewMatrixOffset;
+
+                ex::var<ViewRender> view_render;
+                {
+                    ex::var<uintptr_t> vr_ptr
+                        = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewRenderOffset;
+
+                    view_render = decltype(view_render){*vr_ptr.get()};
+                }
+
+                local_player.matrix = std::move(matrix);
+                local_player.view_render = std::move(view_render);
+            }
+
+            gui::BeginRender();
+            gui::Render(players_list, local_player);
+            gui::EndRender();
+
+            if(!gui::show_menu && gui::is_dd_activated() && global_t::in_game)
+            {
+                aim(players_list, sense_settings, local_player, orbs_list);
+            }
+        }
+
+        if(is_dd_window_closed)
+        {
+            // TODO REMAKE
+            break;
+            CloseHandle(ex::get_global_handle());
+            ex::set_global_handle(nullptr);
+
+            // Just reusing old UI
+            //gui::DestroyImGui();
+            //gui::DestroyDevice();
+            //gui::DestroyHWindow();
+            gui::BeginRender();
+            gui::EndRender();
+
             continue;
         }
 
-        ex::var<SenseSetting> sense_settings{
-            *senseSettingsPtr.get(), std::make_tuple(
-                &SenseSetting::global_sense,
-                &SenseSetting::aim_sense_coef
-            )
-        };
-
-        ex::var<uintptr_t> ex_entity_list_ptr
-            = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
-
-        auto [players_list, local_player_i,
-            orbs_list] = dl_memory_t::get_all_entities(*ex_entity_list_ptr);
-        auto& local_player = players_list[local_player_i];
-
-        // initing local_player
-        {
-            ex::var<Urho3D::Matrix3x4> matrix
-                = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewMatrixOffset;
-
-            ex::var<ViewRender> view_render;
-            {
-                ex::var<uintptr_t> vr_ptr
-                    = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewRenderOffset;
-
-                view_render = decltype(view_render){*vr_ptr.get()};
-            }
-
-            local_player.matrix = std::move(matrix);
-            local_player.view_render = std::move(view_render);
-        }
-
-        gui::BeginRender();
-        gui::Render(players_list, local_player);
-        gui::EndRender();
-
-        if(!gui::show_menu && gui::is_dd_activated())
-        {
-            aim(players_list, sense_settings, local_player, orbs_list);
-        }
+        break;
     }
 
     // destroy gui
@@ -497,7 +539,7 @@ int ex_main()
     gui::DestroyDevice();
     gui::DestroyHWindow();
 
-    //CloseHandle(processHandle);
+    CloseHandle(ex::get_global_handle());
     return 0;
 }
 
