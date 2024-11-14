@@ -293,7 +293,11 @@ void draw_menu()
     {
         ImGui::SetNextWindowPos({0, 0});
         ImGui::SetNextWindowSize({static_cast<float>(gui::WIDTH), static_cast<float>(gui::HEIGHT)});
-        ImGui::Begin("DD", nullptr, ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin("CatCat", nullptr,
+            ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoMove);
 
         if (ImGui::BeginTabBar("##tabs"))
         {
@@ -456,12 +460,14 @@ void draw_menu()
 
 void gui::BeginRender() noexcept
 {
-    /* TODO Make it one in several seconds
-    RECT rect;
-    GetWindowRect(dow_hwnd, &rect);
-    SetWindowPos(window, HWND_TOPMOST, rect.left, rect.top, 0, 0, SWP_NOSIZE);
-    ShowWindow(window, SW_SHOWDEFAULT);
-    UpdateWindow(window);*/
+    if(gui::show_menu)
+    {
+        RECT rect;
+        GetWindowRect(dow_hwnd, &rect);
+        SetWindowPos(window, HWND_TOPMOST, rect.left, rect.top, 0, 0, SWP_NOSIZE);
+        ShowWindow(window, SW_SHOWDEFAULT);
+        UpdateWindow(window);
+    }
 
     MSG message;
     while (PeekMessage(&message, 0, 0, 0, PM_REMOVE))
@@ -574,6 +580,9 @@ void gui::Render() noexcept
             if (i.ex_controller->m_iTeamNum == global_t::local_player->ex_controller->m_iTeamNum)
                 continue;
 
+            if(i.ex_pawn->m_lifeState != 0)
+                continue;
+
             auto [bottom_pos, bottom_pos_is_ok] = gui::world_to_screen(i.world_pos, global_t::local_player->matrix.get());
             auto [head_pos, head_pos_is_ok] = gui::world_to_screen(i.head_pos, global_t::local_player->matrix.get());
 
@@ -587,7 +596,9 @@ void gui::Render() noexcept
             {
                 float width = std::abs(head_pos.y - bottom_pos.y) * 0.7;
 
-                ImVec2 p_min = ImVec2{bottom_pos.x + width / 2.f, head_pos.y - (bottom_pos.y - head_pos.y) * 0.1f};
+                ImVec2 p_min = ImVec2{
+                    bottom_pos.x + width / 2.f,
+                    std::min(head_pos.y - (bottom_pos.y - head_pos.y) * 0.1f, bottom_pos.y - 5.f) };
                 ImVec2 p_max = ImVec2{bottom_pos.x - width / 2.f, bottom_pos.y};
 
                 ImGui::GetWindowDrawList()->AddRect(
@@ -602,9 +613,9 @@ void gui::Render() noexcept
                 if(settings_t::esp_with_health){
                     ImGui::GetWindowDrawList()->AddLine(
                         ImVec2{
-                            p_max.x, p_max.y -
+                            p_max.x, std::max(p_max.y -
                             ((float)i.ex_pawn->m_iHealth / (float)i.ex_pawn->m_iMaxHealth) *
-                            std::abs(p_max.y - p_min.y)
+                            std::abs(p_max.y - p_min.y), p_min.y)
                         },
                         p_max,
                         ImColor(0, 255, 0, 255),

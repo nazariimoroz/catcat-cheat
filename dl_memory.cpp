@@ -180,7 +180,6 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
             orbs.push_back(std::move(orb));
         }
     }
-    std::cout << std::endl;
 
     return {players, index_of_local_player, orbs};
 }
