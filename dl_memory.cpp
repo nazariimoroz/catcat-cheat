@@ -14,14 +14,14 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
     size_t index_of_local_player = 0;
     std::vector<orb_t> orbs;
 
-    ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 0x10;
-
     ex::var<uint32_t> ex_list_size = entity_list_sys_ptr + 0x1534;
     global_t::list_size = *ex_list_size;
 
     int list_itter = 0;
     for (int i = 0; list_itter < global_t::list_size; ++i)
     {
+        ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 8LL * ((i & 0x7FFF) >> 9) + 16;
+
         player_t player{};
         ex::var<uintptr_t> ex_entity_inst_address
             = (*ex_entity_list_ptr) + 0x78 * (i & 0x1FF);
@@ -32,6 +32,8 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
         list_itter += 1;
 
         std::string design_name = get_entity_design_name(*ex_entity_inst_address);
+        //if(design_name.empty())
+        //    std::cout << design_name << std::endl;
         if (design_name == "citadel_player_controller")
         {
             ex::var<source2sdk::client::CCitadelPlayerController> ex_controller{
