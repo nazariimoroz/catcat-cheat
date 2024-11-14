@@ -145,16 +145,13 @@ bool in_game(uintptr_t local_player_ptr_address)
     return *local_player_address.get();
 }
 
-void aim(std::vector<player_t>& players_list,
-    ex::var<SenseSetting>& sense_settings,
-    player_t& local_player,
-    std::vector<orb_t>& orbs_list)
+void aim()
 {
     bool aim_worked = false;
 
     if ( settings_t::aim &&
-        ((settings_t::aim_scope == scope_t::scope_only && local_player.view_render->fov < 80.f) ||
-        (settings_t::aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
+        ((settings_t::aim_scope == scope_t::scope_only && global_t::local_player->view_render->fov < 80.f) ||
+        (settings_t::aim_scope == scope_t::noscope_only && global_t::local_player->view_render->fov > 80.f) ||
         settings_t::aim_scope == scope_t::scope_and_noscope))
     {
         if (!(GetAsyncKeyState(settings_t::aim_key) & 0x8000))
@@ -164,15 +161,15 @@ void aim(std::vector<player_t>& players_list,
 
         player_t* closest_player = nullptr;
         xyz_t closest_player_screen = {0, 0, INFINITY};
-        for (auto& i : players_list)
+        for (auto& i : global_t::players_list)
         {
-            if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
+            if (i.ex_controller->m_iTeamNum == global_t::local_player->ex_controller->m_iTeamNum)
                 continue;
 
             if (i.ex_pawn->m_lifeState != 0)
                 continue;
 
-            auto [xyw, is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
+            auto [xyw, is_ok] = gui::world_to_screen(i.head_pos, global_t::local_player->matrix.get());
             if (!is_ok)
                 continue;
 
@@ -214,12 +211,12 @@ void aim(std::vector<player_t>& players_list,
             auto result = closest_player_screen - cursor_pos;
             result.z = 0;
 
-            float coef = get_coef(local_player.view_render->fov,
-                                  sense_settings->global_sense,
-                                  sense_settings->aim_sense_coef,
-                                  local_player.view_render->fov < 80.f);
+            float coef = get_coef(global_t::local_player->view_render->fov,
+                                  (*global_t::ex_sense_settings)->global_sense,
+                                  (*global_t::ex_sense_settings)->aim_sense_coef,
+                                  global_t::local_player->view_render->fov < 80.f);
 
-            float fov_per_pixel = local_player.view_render->fov / (float)gui::WIDTH / 2;
+            float fov_per_pixel = global_t::local_player->view_render->fov / (float)gui::WIDTH / 2;
             result.x = (result.x * fov_per_pixel) / coef;
             result.y = (result.y * fov_per_pixel) / coef;
 
@@ -235,8 +232,8 @@ void aim(std::vector<player_t>& players_list,
         goto AIM_EXIT;
 
     if ( settings_t::orb_aim &&
-        ((settings_t::orb_aim_scope == scope_t::scope_only && local_player.view_render->fov < 80.f) ||
-        (settings_t::orb_aim_scope == scope_t::noscope_only && local_player.view_render->fov > 80.f) ||
+        ((settings_t::orb_aim_scope == scope_t::scope_only && global_t::local_player->view_render->fov < 80.f) ||
+        (settings_t::orb_aim_scope == scope_t::noscope_only && global_t::local_player->view_render->fov > 80.f) ||
         settings_t::orb_aim_scope == scope_t::scope_and_noscope))
     {
         if (!(GetAsyncKeyState(settings_t::orb_aim_key) & 0x8000))
@@ -247,12 +244,12 @@ void aim(std::vector<player_t>& players_list,
         orb_t* closest_orb = nullptr;
         xyz_t closest_orb_screen = {0, 0, INFINITY};
         float min_len = INFINITY;
-        for (auto& i : orbs_list)
+        for (auto& i : global_t::orbs_list)
         {
             if(i.visible)
                 continue;
 
-            auto [xyw, is_ok] = gui::world_to_screen(i.position, local_player.matrix.get());
+            auto [xyw, is_ok] = gui::world_to_screen(i.position, global_t::local_player->matrix.get());
             if (!is_ok)
                 continue;
 
@@ -280,12 +277,12 @@ void aim(std::vector<player_t>& players_list,
             auto result = closest_orb_screen - cursor_pos;
             result.z = 0;
 
-            float coef = get_coef(local_player.view_render->fov,
-                                  sense_settings->global_sense,
-                                  sense_settings->aim_sense_coef,
-                                  local_player.view_render->fov < 80.f);
+            float coef = get_coef(global_t::local_player->view_render->fov,
+                                  (*global_t::ex_sense_settings)->global_sense,
+                                  (*global_t::ex_sense_settings)->aim_sense_coef,
+                                  global_t::local_player->view_render->fov < 80.f);
 
-            float fov_per_pixel = local_player.view_render->fov / (float)gui::WIDTH / 2;
+            float fov_per_pixel = global_t::local_player->view_render->fov / (float)gui::WIDTH / 2;
             result.x = (result.x * fov_per_pixel) / coef;
             result.y = (result.y * fov_per_pixel) / coef;
 
@@ -470,47 +467,57 @@ int ex_main()
             if (!global_t::in_game)
             {
                 global_t::list_size = 0;
-                break;
             }
 
-            ex::var<SenseSetting> sense_settings{
-                *senseSettingsPtr.get(), std::make_tuple(
-                    &SenseSetting::global_sense,
-                    &SenseSetting::aim_sense_coef
-                )
-            };
-
-            ex::var<uintptr_t> ex_entity_list_ptr
-                = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
-
-            auto [players_list, local_player_i,
-                orbs_list] = dl_memory_t::get_all_entities(*ex_entity_list_ptr);
-            auto& local_player = players_list[local_player_i];
-
-            // initing local_player
+            if(global_t::in_game)
             {
-                ex::var<Urho3D::Matrix3x4> matrix
-                    = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewMatrixOffset;
+                global_t::ex_sense_settings = std::make_unique<ex::var<SenseSetting>>(
+                    *senseSettingsPtr.get(), std::make_tuple(
+                        &SenseSetting::global_sense,
+                        &SenseSetting::aim_sense_coef
+                    )
+                );
 
-                ex::var<ViewRender> view_render;
+                ex::var<uintptr_t> ex_entity_list_ptr
+                    = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + entityListOffset;
+
+                auto [players_list, local_player_i,
+                    orbs_list] = dl_memory_t::get_all_entities(*ex_entity_list_ptr);
+                auto& local_player = players_list[local_player_i];
+
+                // initing local_player
                 {
-                    ex::var<uintptr_t> vr_ptr
-                        = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewRenderOffset;
+                    ex::var<Urho3D::Matrix3x4> matrix
+                        = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewMatrixOffset;
 
-                    view_render = decltype(view_render){*vr_ptr.get()};
+                    ex::var<ViewRender> view_render;
+                    {
+                        ex::var<uintptr_t> vr_ptr
+                            = reinterpret_cast<uintptr_t>(module_info.lpBaseOfDll) + viewRenderOffset;
+
+                        view_render = decltype(view_render){*vr_ptr.get()};
+                    }
+
+                    local_player.matrix = std::move(matrix);
+                    local_player.view_render = std::move(view_render);
                 }
 
-                local_player.matrix = std::move(matrix);
-                local_player.view_render = std::move(view_render);
+                global_t::players_list = std::move(players_list);
+                global_t::orbs_list = std::move(orbs_list);
+                global_t::local_player = &global_t::players_list[local_player_i];
+            }
+            else
+            {
+                global_t::restart_temp();
             }
 
             gui::BeginRender();
-            gui::Render(players_list, local_player);
+            gui::Render();
             gui::EndRender();
 
             if(!gui::show_menu && gui::is_dd_activated() && global_t::in_game)
             {
-                aim(players_list, sense_settings, local_player, orbs_list);
+                aim();
             }
         }
 

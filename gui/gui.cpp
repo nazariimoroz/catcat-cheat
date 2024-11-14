@@ -547,11 +547,11 @@ std::tuple<xyz_t, bool> gui::world_to_screen(xyz_t pos, Urho3D::Matrix3x4* mtx)
     return {{_x, _y, w}, true};
 }
 
-void gui::Render(std::vector<player_t>& players_list, player_t& local_player) noexcept
+void gui::Render() noexcept
 {
     draw_menu();
 
-    if(show_menu || !gui::is_dd_activated() || global_t::in_game)
+    if(show_menu || !gui::is_dd_activated() || !global_t::in_game)
         return;
 
     ImGui::SetNextWindowPos({0, 0});
@@ -569,13 +569,13 @@ void gui::Render(std::vector<player_t>& players_list, player_t& local_player) no
 
     if (settings_t::esp)
     {
-        for (auto& i : players_list)
+        for (auto& i : global_t::players_list)
         {
-            if (i.ex_controller->m_iTeamNum == local_player.ex_controller->m_iTeamNum)
+            if (i.ex_controller->m_iTeamNum == global_t::local_player->ex_controller->m_iTeamNum)
                 continue;
 
-            auto [bottom_pos, bottom_pos_is_ok] = gui::world_to_screen(i.world_pos, local_player.matrix.get());
-            auto [head_pos, head_pos_is_ok] = gui::world_to_screen(i.head_pos, local_player.matrix.get());
+            auto [bottom_pos, bottom_pos_is_ok] = gui::world_to_screen(i.world_pos, global_t::local_player->matrix.get());
+            auto [head_pos, head_pos_is_ok] = gui::world_to_screen(i.head_pos, global_t::local_player->matrix.get());
 
             if (bottom_pos.z > settings_t::esp_max_distance)
                 continue;

@@ -60,7 +60,7 @@ namespace gui
 
 	void BeginRender() noexcept;
 	void EndRender() noexcept;
-	void Render(std::vector<player_t>& players_list, player_t& local_player) noexcept;
+	void Render() noexcept;
 
 	std::tuple<xyz_t, bool> world_to_screen(xyz_t pos, Urho3D::Matrix3x4* mtx);
 }
