@@ -127,13 +127,14 @@ float get_coef(float fov, float global_sense, float aim_sense_mul, bool in_aim)
     // 2: 0.0225849f * 1.4555f     = 0.03287232
     // 3: 0.0225849f * 1.964f      = 0.04435674
 
-    float final_coef = 0.0226762f
+    float final_coef = 0.0232162f
         * global_sense
         * fov;
 
     if (in_aim)
     {
-        final_coef *= ((0.5085f * aim_sense_mul) + 0.44037767f);
+        // ((0.5082043f * aim_sense_mul) + 0.45246161f);
+        final_coef *= ((0.5085f * aim_sense_mul) + 0.45157767f);
     }
 
     return final_coef;
@@ -301,64 +302,6 @@ void aim()
 
 int ex_main()
 {
-    // aim coef testing
-#if 0
-    // GLOBAL FINAL COEF: 0.0442
-
-    /* NO AIM
-    float sens_coef = 2.f;
-    float fov = 90.f / 45.f;
-    float final_coef = 0.02185f
-        * sens_coef
-        * fov;
-    */ // 0.0442
-
-    /*
-    float sens_coef = 1.f;
-    float final_coef = 0.020455f
-        * sens_coef;
-    */
-
-    // final_coef1: 0.0225849f
-
-    do
-    {
-        //std::cin >> final_coef;
-
-        // 87.61151886f
-        // 43.02112579f
-        float final_coef = get_coef(43.02112579f);
-
-        Sleep(3000);
-
-        timeBeginPeriod(1);
-
-        move_mouse(10, 10);
-        Sleep(50);
-        move_mouse(-10, -10);
-        Sleep(50);
-
-        double nedded_angle_x = 0, nedded_angle_y = 0., current_angle_x = 0., current_angle_y = 0.;
-        for(int i = 0; i < 360; ++i)
-        {
-            nedded_angle_x += 1;
-            nedded_angle_y += 0;
-
-            auto can_move_x = static_cast<int>((nedded_angle_x - current_angle_x) / final_coef);
-            auto can_move_y = static_cast<int>((nedded_angle_y - current_angle_y) / final_coef);
-
-            current_angle_x += static_cast<double>(can_move_x) * final_coef;
-            current_angle_y += static_cast<double>(can_move_y) * final_coef;
-
-            move_mouse(can_move_x, can_move_y);
-            Sleep(1);
-        }
-
-        timeEndPeriod(1);
-    } while(false);
-
-    return 1;
-#endif
 
 #pragma region SigsInition GettingDdHandle GettingsOffsetsFromSigs
     ex::signature_t localPlayerSig("48 8B 0D ? ? ? ? 48 85 C9 74 65 83 FF FF", 3, 7);
@@ -510,6 +453,63 @@ int ex_main()
             {
                 global_t::restart_temp();
             }
+
+            // aim coef testing
+#if 0
+            // GLOBAL FINAL COEF: 0.0442
+
+            /* NO AIM
+            float sens_coef = 2.f;
+            float fov = 90.f / 45.f;
+            float final_coef = 0.02185f
+                * sens_coef
+                * fov;
+            */ // 0.0442
+
+            /*
+            float sens_coef = 1.f;
+            float final_coef = 0.020455f
+                * sens_coef;
+            */
+
+            // final_coef1: 0.0225849f
+
+            do
+            {
+                //std::cin >> final_coef;
+
+                // 87.61151886f
+                // 43.02112579f
+                float final_coef = get_coef(global_t::local_player->view_render->fov,
+                    (*global_t::ex_sense_settings)->global_sense,
+                    (*global_t::ex_sense_settings)->aim_sense_coef,
+                    global_t::local_player->view_render->fov < 60.f );
+
+                Sleep(3000);
+
+                timeBeginPeriod(1);
+
+                double nedded_angle_x = 0, nedded_angle_y = 0., current_angle_x = 0., current_angle_y = 0.;
+                for(int i = 0; i < 360; ++i)
+                {
+                    nedded_angle_x += 1;
+                    nedded_angle_y += 0;
+
+                    auto can_move_x = static_cast<int>((nedded_angle_x - current_angle_x) / final_coef);
+                    auto can_move_y = static_cast<int>((nedded_angle_y - current_angle_y) / final_coef);
+
+                    current_angle_x += static_cast<double>(can_move_x) * final_coef;
+                    current_angle_y += static_cast<double>(can_move_y) * final_coef;
+
+                    move_mouse(can_move_x, can_move_y);
+                    Sleep(1);
+                }
+
+                timeEndPeriod(1);
+            } while(false);
+
+            return 1;
+#endif
 
             gui::BeginRender();
             gui::Render();
