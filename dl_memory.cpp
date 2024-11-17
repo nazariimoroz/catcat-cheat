@@ -11,16 +11,19 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
     uintptr_t entity_list_sys_ptr)
 {
     std::vector<player_t> players;
-    size_t index_of_local_player = 0;
+    size_t index_of_local_player = SIZE_MAX;
     std::vector<orb_t> orbs;
 
     ex::var<uint32_t> ex_list_size = entity_list_sys_ptr + 0x1534;
     global_t::list_size = *ex_list_size;
 
+    std::unordered_map<uintptr_t, ex::var<uintptr_t>> ptrs;
+
     int list_itter = 0;
     for (int i = 0; list_itter < global_t::list_size; ++i)
     {
-        ex::var<uintptr_t> ex_entity_list_ptr = entity_list_sys_ptr + 8LL * ((i & 0x7FFF) >> 9) + 16;
+        const auto entity_list_ptr_address = entity_list_sys_ptr + 8LL * ((i & 0x7FFF) >> 9) + 16;
+        auto& ex_entity_list_ptr = ptrs.try_emplace(entity_list_ptr_address, entity_list_ptr_address).first->second;
 
         player_t player{};
         ex::var<uintptr_t> ex_entity_inst_address
@@ -32,8 +35,9 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
         list_itter += 1;
 
         std::string design_name = get_entity_design_name(*ex_entity_inst_address);
-        //if(design_name.empty())
-        //    std::cout << design_name << std::endl;
+        if(design_name.empty())
+            continue;
+
         if (design_name == "citadel_player_controller")
         {
             ex::var<source2sdk::client::CCitadelPlayerController> ex_controller{
@@ -44,6 +48,19 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
                     &source2sdk::client::CCitadelPlayerController::m_bIsLocalPlayerController
                 )
             };
+
+            if (ex_controller->m_bIsLocalPlayerController)
+            {
+                index_of_local_player = players.size();
+            }
+
+            // if player in our team, skip him
+            if(!ex_controller->m_bIsLocalPlayerController &&
+                (index_of_local_player == SIZE_MAX ? false /* if no local player, then ok */:
+                    ex_controller->m_iTeamNum == players.at(index_of_local_player).ex_controller->m_iTeamNum))
+            {
+                continue;
+            }
 
             player.ex_controller = std::move(ex_controller);
 
@@ -140,11 +157,6 @@ std::tuple<std::vector<player_t>, size_t, std::vector<orb_t>> dl_memory_t::get_a
                 player.head_pos = ex_bone.get()->position;
             }
             while (false);
-
-            if (player.ex_controller->m_bIsLocalPlayerController)
-            {
-                index_of_local_player = players.size();
-            }
 
             players.push_back(std::move(player));
         }

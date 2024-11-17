@@ -34,7 +34,8 @@ add_executable(${PROJECT_NAME} WIN32 main.cpp
         settings.cpp
         dl_memory.h
         dl_memory.cpp
-        .env.h)
+        .env.h
+        app.rc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         imgui::imgui
@@ -44,4 +45,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         Shell32
         winmm.lib
         glm::glm)
+
 target_include_directories(${PROJECT_NAME} PRIVATE .)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "catcat-deadlock")
